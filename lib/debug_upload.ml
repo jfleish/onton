@@ -89,6 +89,9 @@ let scrub_file_contents ~name raw =
   in
   Token_scrub.scrub_token_patterns first_pass
 
+let bundle_join left right =
+  if String.is_empty left then right else left ^ "/" ^ right
+
 let rec walk_files ~root ~relative =
   if Stdlib.Sys.file_exists root then
     if Stdlib.Sys.is_directory root then
@@ -98,7 +101,7 @@ let rec walk_files ~root ~relative =
           let path = Stdlib.Filename.concat root entry in
           let next_relative =
             if String.is_empty relative then entry
-            else Stdlib.Filename.concat relative entry
+            else bundle_join relative entry
           in
           walk_files ~root:path ~relative:next_relative)
     else [ (relative, root) ]
@@ -155,7 +158,7 @@ let collect_base_files ~project_name =
 let collect_session_files ~project_name =
   let session_root = Project_store.sessions_dir project_name in
   let files = walk_files ~root:session_root ~relative:"" in
-  let folder name = Stdlib.Filename.concat "sessions" name in
+  let folder name = bundle_join "sessions" name in
   let files, artifact_paths, meta_summaries =
     List.fold files ~init:([], [], [])
       ~f:(fun (acc_files, acc_paths, acc_meta_summaries) (relative, path) ->
