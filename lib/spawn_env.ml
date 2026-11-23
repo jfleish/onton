@@ -297,8 +297,18 @@ let%test "merged env contains per-patch overrides" =
   let claude_a = Option.value_exn (find "CLAUDE_CONFIG_DIR" env_a) in
   let claude_b = Option.value_exn (find "CLAUDE_CONFIG_DIR" env_b) in
   let codex_a = Option.value_exn (find "CODEX_HOME" env_a) in
-  String.is_substring claude_a ~substring:"spawn-envs/patch-1/claude"
-  && String.is_substring codex_a ~substring:"spawn-envs/patch-1/codex"
+  let expected_claude =
+    Stdlib.Filename.concat
+      (Stdlib.Filename.concat "spawn-envs" "patch-1")
+      "claude"
+  in
+  let expected_codex =
+    Stdlib.Filename.concat
+      (Stdlib.Filename.concat "spawn-envs" "patch-1")
+      "codex"
+  in
+  String.is_substring claude_a ~substring:expected_claude
+  && String.is_substring codex_a ~substring:expected_codex
   && not (String.equal claude_a claude_b)
 
 let%test
@@ -310,8 +320,21 @@ let%test
       ~worktree_path:"/Users/x/worktrees/foo/patch-42"
       ~session_id:"c9f311bc-7e1a-4b36-bc1f-940513fb75f9"
   in
-  String.equal path
-    "/proj/spawn-envs/42/claude/projects/-Users-x-worktrees-foo-patch-42/c9f311bc-7e1a-4b36-bc1f-940513fb75f9.jsonl"
+  let expected =
+    Stdlib.Filename.concat
+      (Stdlib.Filename.concat
+         (Stdlib.Filename.concat
+            (Stdlib.Filename.concat
+               (Stdlib.Filename.concat "/proj" "spawn-envs")
+               "42")
+            "claude")
+         "projects")
+      "-Users-x-worktrees-foo-patch-42"
+    |> fun dir ->
+    Stdlib.Filename.concat dir
+      "c9f311bc-7e1a-4b36-bc1f-940513fb75f9.jsonl"
+  in
+  String.equal path expected
 
 let%test "claude_project_dir_key: replaces every slash with a dash" =
   String.equal (claude_project_dir_key ~worktree_path:"/a/b/c") "-a-b-c"
@@ -367,18 +390,17 @@ let%test "seed_auth_links creates symlinks when src auth files exist" =
   seed_auth_links_with ~claude_src_dir:(Some claude_src)
     ~codex_src_dir:(Some codex_src) ~opencode_src_dir:(Some opencode_src)
     ~claude_dir ~codex_dir ~opencode_dir;
-  let target dst_dir filename =
-    Unix.readlink (Stdlib.Filename.concat dst_dir filename)
+  let check dst_dir filename src_dir =
+    let dst = Stdlib.Filename.concat dst_dir filename in
+    let src = Stdlib.Filename.concat src_dir filename in
+    match Unix.readlink dst with
+    | target -> String.equal target src
+    | exception Unix.Unix_error _ ->
+        String.equal (read_file dst) (read_file src)
   in
-  String.equal
-    (target claude_dir ".credentials.json")
-    (Stdlib.Filename.concat claude_src ".credentials.json")
-  && String.equal
-       (target codex_dir "auth.json")
-       (Stdlib.Filename.concat codex_src "auth.json")
-  && String.equal
-       (target opencode_dir "opencode.json")
-       (Stdlib.Filename.concat opencode_src "opencode.json")
+  check claude_dir ".credentials.json" claude_src
+  && check codex_dir "auth.json" codex_src
+  && check opencode_dir "opencode.json" opencode_src
 
 let%test "seed_auth_links is idempotent" =
   with_temp_project_dir @@ fun project_dir ->
@@ -395,9 +417,11 @@ let%test "seed_auth_links is idempotent" =
   in
   do_seed ();
   do_seed ();
-  String.equal
-    (Unix.readlink (Stdlib.Filename.concat codex_dir "auth.json"))
-    (Stdlib.Filename.concat codex_src "auth.json")
+  let dst = Stdlib.Filename.concat codex_dir "auth.json" in
+  let src = Stdlib.Filename.concat codex_src "auth.json" in
+  match Unix.readlink dst with
+  | target -> String.equal target src
+  | exception Unix.Unix_error _ -> String.equal (read_file dst) (read_file src)
 
 let%test "seed_auth_links skips backends with no src auth file" =
   with_temp_project_dir @@ fun project_dir ->
@@ -481,9 +505,13 @@ let%test "resolve_claude_oauth_token: empty env var falls back to file" =
     | "HOME" -> Some "/h"
     | _ -> None
   in
-  let read_token_file = function
-    | "/h/.config/onton/claude-oauth-token" -> Some "file-tok"
-    | _ -> None
+  let expected =
+    Stdlib.Filename.concat
+      (Stdlib.Filename.concat "/h" ".config")
+      "onton/claude-oauth-token"
+  in
+  let read_token_file path =
+    if String.equal path expected then Some "file-tok" else None
   in
   match resolve_claude_oauth_token_with ~getenv_opt ~read_token_file with
   | Some "file-tok" -> true
@@ -491,9 +519,13 @@ let%test "resolve_claude_oauth_token: empty env var falls back to file" =
 
 let%test "resolve_claude_oauth_token: HOME-based fallback strips whitespace" =
   let getenv_opt = function "HOME" -> Some "/h" | _ -> None in
-  let read_token_file = function
-    | "/h/.config/onton/claude-oauth-token" -> Some "  tok\n"
-    | _ -> None
+  let expected =
+    Stdlib.Filename.concat
+      (Stdlib.Filename.concat "/h" ".config")
+      "onton/claude-oauth-token"
+  in
+  let read_token_file path =
+    if String.equal path expected then Some "  tok\n" else None
   in
   match resolve_claude_oauth_token_with ~getenv_opt ~read_token_file with
   | Some "tok" -> true
@@ -505,9 +537,9 @@ let%test "resolve_claude_oauth_token: XDG_CONFIG_HOME wins over HOME" =
     | "HOME" -> Some "/h"
     | _ -> None
   in
-  let read_token_file = function
-    | "/x/onton/claude-oauth-token" -> Some "xdg-tok"
-    | _ -> None
+  let expected = Stdlib.Filename.concat "/x" "onton/claude-oauth-token" in
+  let read_token_file path =
+    if String.equal path expected then Some "xdg-tok" else None
   in
   match resolve_claude_oauth_token_with ~getenv_opt ~read_token_file with
   | Some "xdg-tok" -> true

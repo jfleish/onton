@@ -20,9 +20,7 @@ let mktempdir prefix =
   in
   loop 0
 
-let rm_rf dir =
-  ignore (Sys.command (Printf.sprintf "rm -rf %s" (Filename.quote dir)))
-
+let rm_rf = Host.rm_rf
 let fail_if cond msg = if cond then failwith msg
 
 let must_ok = function
@@ -55,8 +53,8 @@ let test_happy_path () =
       close_in ic;
       let pid = int_of_string (String.trim content) in
       fail_if
-        (pid <> Unix.getpid ())
-        (Printf.sprintf "PID mismatch: %d vs %d" pid (Unix.getpid ()));
+        (pid <> Host.os_pid ())
+        (Printf.sprintf "PID mismatch: %d vs %d" pid (Host.os_pid ()));
       Project_lock.release lock)
 
 let test_release_is_idempotent () =
@@ -75,11 +73,65 @@ let test_release_is_idempotent () =
       in
       Project_lock.release lock2)
 
+let holder_mode () =
+  if Array.length Sys.argv = 3 && String.equal Sys.argv.(1) "--lock-holder" then (
+    let dir = Sys.argv.(2) in
+    let lock =
+      must_ok (Project_lock.acquire ~project_dir:dir ~on_stale:on_stale_noop)
+    in
+    close_out (open_out (dir // "ready"));
+    while not (Sys.file_exists (dir // "stop")) do
+      ignore (Unix.select [] [] [] 0.01)
+    done;
+    Project_lock.release lock;
+    true)
+  else false
+
+let spawn_holder dir =
+  let argv = [| Sys.executable_name; "--lock-holder"; dir |] in
+  let child =
+    Unix.create_process Sys.executable_name argv Unix.stdin Unix.stdout
+      Unix.stderr
+  in
+  let rec wait_ready attempts =
+    if Sys.file_exists (dir // "ready") then ()
+    else if attempts = 0 then failwith "lock holder did not become ready"
+    else (
+      ignore (Unix.select [] [] [] 0.01);
+      wait_ready (attempts - 1))
+  in
+  wait_ready 500;
+  child
+
+let stop_holder dir child =
+  close_out (open_out (dir // "stop"));
+  ignore (Unix.waitpid [] child)
+
+let test_contention_windows () =
+  let dir = mktempdir "onton-lock-contention" in
+  Fun.protect
+    ~finally:(fun () -> rm_rf dir)
+    (fun () ->
+      let child = spawn_holder dir in
+      let held_pid =
+        must_held_by
+          (Project_lock.acquire ~project_dir:dir ~on_stale:on_stale_noop)
+      in
+      fail_if
+        (held_pid <> Host.spawned_pid child)
+        (Printf.sprintf "held-by pid mismatch: %d vs child %d" held_pid
+           (Host.spawned_pid child));
+      stop_holder dir child;
+      let lock =
+        must_ok (Project_lock.acquire ~project_dir:dir ~on_stale:on_stale_noop)
+      in
+      Project_lock.release lock)
+
 (** Fork a child that acquires the lock and pauses. The child signals readiness
     over a pipe *after* [acquire] has finished its ftruncate+write, so the
     parent never observes the file mid-write. Then the parent attempts to
     acquire and must see [Held_by child_pid]. *)
-let test_contention () =
+let test_contention_posix () =
   let dir = mktempdir "onton-lock-contention" in
   Fun.protect
     ~finally:(fun () -> rm_rf dir)
@@ -137,7 +189,7 @@ let test_contention () =
     cases (FD inherited across fork, dying holder with FDs still open
     elsewhere); those are difficult to reach from userspace and aren't tested.
 *)
-let test_crash_recovery () =
+let test_crash_recovery_posix () =
   let dir = mktempdir "onton-lock-crash" in
   Fun.protect
     ~finally:(fun () -> rm_rf dir)
@@ -176,9 +228,27 @@ let test_crash_recovery () =
           in
           Project_lock.release lock)
 
+let test_crash_recovery_windows () =
+  let dir = mktempdir "onton-lock-crash" in
+  Fun.protect
+    ~finally:(fun () -> rm_rf dir)
+    (fun () ->
+      let child = spawn_holder dir in
+      Host.stop_process (Host.spawned_pid child);
+      ignore (Unix.waitpid [] child);
+      let lock =
+        must_ok (Project_lock.acquire ~project_dir:dir ~on_stale:on_stale_noop)
+      in
+      Project_lock.release lock)
+
 let () =
-  test_happy_path ();
-  test_release_is_idempotent ();
-  test_contention ();
-  test_crash_recovery ();
-  print_endline "test_project_lock: OK"
+  if not (holder_mode ()) then (
+    test_happy_path ();
+    test_release_is_idempotent ();
+    if Host.is_windows then (
+      test_contention_windows ();
+      test_crash_recovery_windows ())
+    else (
+      test_contention_posix ();
+      test_crash_recovery_posix ());
+    print_endline "test_project_lock: OK")

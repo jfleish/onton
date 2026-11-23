@@ -511,8 +511,12 @@ let run_prune_registered ~registration ~net ~clock ~process_mgr ~github_token
          Worktree directories are not pruned automatically (they may contain \
          build outputs).\n\
          Remove them manually once they are no longer needed:\n";
+      let rm_cmd =
+        if String.equal Stdlib.Sys.os_type "Win32" then "rmdir /s /q"
+        else "rm -rf"
+      in
       List.iter (List.rev leftover_worktrees) ~f:(fun (_, p, _) ->
-          Stdlib.Printf.printf "  rm -rf %s\n" p));
+          Stdlib.Printf.printf "  %s %s\n" rm_cmd p));
     if not (List.is_empty !errors) then 1 else 0
 
 let run_prune ~net ~clock ~process_mgr ~github_token ~refresh () =

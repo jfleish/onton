@@ -13,7 +13,7 @@ let () =
       (match previous with
       | Some value -> Unix.putenv "ONTON_DATA_DIR" value
       | None -> Unix.unsetenv "ONTON_DATA_DIR");
-      ignore (Stdlib.Sys.command ("rm -rf " ^ Stdlib.Filename.quote directory)))
+      Host.rm_rf directory)
 
 (** Tests for live worktree guidance in implementation and cleanup sessions. *)
 
@@ -290,7 +290,7 @@ let () =
       (match previous with
       | Some value -> Unix.putenv "ONTON_DATA_DIR" value
       | None -> Unix.unsetenv "ONTON_DATA_DIR");
-      ignore (Stdlib.Sys.command ("rm -rf " ^ Stdlib.Filename.quote directory)))
+      Host.rm_rf directory)
     ~f:(fun () ->
       Unix.putenv "ONTON_DATA_DIR" directory;
       let prompts =

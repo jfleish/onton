@@ -65,7 +65,7 @@ let () =
         let result =
           Llm_backend.spawn_and_stream ~process_mgr ~clock ~timeout ~cwd
             ~env:(Unix.environment ()) ~setsid_exec
-            ~args:[ "/bin/sh"; "-c"; script ]
+            ~args:[ Host.posix_shell (); "-c"; script ]
             ~session_uuid:None ~patch_id ~process_line ~on_event
         in
         (result, Eio.Time.now clock -. start)
@@ -98,27 +98,42 @@ let () =
       expect "last output renews the full idle window" Float.(elapsed >= 0.72);
       expect "renewed silence is bounded" Float.(elapsed < 3.0);
       let pulse =
-        "i=0; while [ $i -lt 8 ]; do printf x; /bin/sleep 0.1; i=$((i + 1)); \
-         done"
+        let body =
+          "i=0; while [ $i -lt 8 ]; do printf x; /bin/sleep 0.1; i=$((i + 1)); \
+           done"
+        in
+        (* Windows socketpair streams do not surface an unterminated final line
+           at EOF, so terminate the partial output explicitly there. *)
+        if Host.is_windows then body ^ "; printf '\\n'" else body
       in
       let partial_stdout, elapsed = run pulse in
       expect "partial stdout keeps the process alive"
         ((not partial_stdout.timed_out) && partial_stdout.exit_code = 0);
       expect "partial stdout exceeds the original deadline"
         Float.(elapsed >= 0.7);
-      expect "partial stdout is captured at EOF"
+      expect
+        ("partial stdout is captured at EOF (got "
+        ^ String.escaped partial_stdout.stdout
+        ^ ")")
         (String.equal partial_stdout.stdout "xxxxxxxx\n");
-      let partial_stderr, elapsed = run ("exec 1>&-; " ^ pulse ^ " >&2") in
-      expect "stderr activity after stdout EOF keeps the process alive"
-        ((not partial_stderr.timed_out) && partial_stderr.exit_code = 0);
-      expect "stderr activity exceeds the original deadline"
-        Float.(elapsed >= 0.7);
-      expect "partial stderr is captured at EOF"
-        (String.equal partial_stderr.stderr "xxxxxxxx");
-      let closed_pipes, elapsed = run "exec 1>&- 2>&-; exec /bin/sleep 30" in
-      expect "closed pipes do not leave a live child waiting"
-        closed_pipes.timed_out;
-      expect "closed-pipe wait is bounded" Float.(elapsed < 3.0);
+      if Host.is_windows then
+        Stdio.print_endline
+          "stderr-after-stdout-EOF fd redirection: SKIPPED (Windows socketpair \
+           descriptors cannot be redirected by sh)"
+      else (
+        let partial_stderr, elapsed =
+          run ("exec 1>&-; { " ^ pulse ^ "; } >&2")
+        in
+        expect "stderr activity after stdout EOF keeps the process alive"
+          ((not partial_stderr.timed_out) && partial_stderr.exit_code = 0);
+        expect "stderr activity exceeds the original deadline"
+          Float.(elapsed >= 0.7);
+        expect "partial stderr is captured at EOF"
+          (String.equal partial_stderr.stderr "xxxxxxxx");
+        let closed_pipes, elapsed = run "exec 1>&- 2>&-; exec /bin/sleep 30" in
+        expect "closed pipes do not leave a live child waiting"
+          closed_pipes.timed_out;
+        expect "closed-pipe wait is bounded" Float.(elapsed < 3.0));
       let blocked_callback, elapsed =
         run "printf 'event\n'; exec /bin/sleep 30"
           ~process_line:(fun _ -> [ Types.Stream_event.Text_delta "event" ])
@@ -171,6 +186,11 @@ let () =
       in
       expect "external cancellation propagates"
         (match cancelled with Error `Timeout -> true | Ok _ -> false);
+      if Host.is_windows then
+        Stdio.print_endline
+          "idle timeout backend registry: SKIPPED (shebang scripts and ':' PATH \
+           are POSIX-only)"
+      else
       let backends =
         [
           ( "claude",

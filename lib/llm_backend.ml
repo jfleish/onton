@@ -13,8 +13,8 @@ type result = {
 }
 [@@deriving show, eq, sexp_of, compare]
 
-let spawn_and_stream ~process_mgr ~clock ~timeout ~cwd ~env ~setsid_exec ~args
-    ~session_uuid ~patch_id
+let spawn_and_stream_with_stdin ~stdin_data ~process_mgr ~clock ~timeout ~cwd
+    ~env ~setsid_exec ~args ~session_uuid ~patch_id
     ~(process_line : string -> Types.Stream_event.t list) ~on_event =
   let supervisor =
     match setsid_exec with
@@ -167,6 +167,9 @@ let spawn_and_stream ~process_mgr ~clock ~timeout ~cwd ~env ~setsid_exec ~args
                       Eio.Fiber.first
                         (fun () ->
                           Eio.Flow.close stdin_r;
+                          if not (String.is_empty stdin_data) then
+                            (try Eio.Flow.copy_string stdin_data stdin_w with
+                             | End_of_file | Eio.Exn.Io _ -> ());
                           Eio.Flow.close stdin_w;
                           Eio.Flow.close stdout_w;
                           Eio.Flow.close stderr_w;
@@ -351,6 +354,11 @@ let spawn_and_stream ~process_mgr ~clock ~timeout ~cwd ~env ~setsid_exec ~args
         saw_final_result = !saw_final_result_ref;
         timed_out = true;
       }
+
+let spawn_and_stream ~process_mgr ~clock ~timeout ~cwd ~env ~setsid_exec ~args
+    ~session_uuid ~patch_id ~process_line ~on_event =
+  spawn_and_stream_with_stdin ~stdin_data:"" ~process_mgr ~clock ~timeout ~cwd
+    ~env ~setsid_exec ~args ~session_uuid ~patch_id ~process_line ~on_event
 
 type t = {
   name : string;

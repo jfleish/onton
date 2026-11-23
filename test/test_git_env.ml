@@ -35,8 +35,14 @@ let askpass_response env prompt =
   match value "GIT_ASKPASS" env with
   | None -> failwith "GIT_ASKPASS missing"
   | Some path ->
+      let command, argv =
+        if Host.is_windows then
+          let sh = Host.posix_shell () in
+          (sh, [| sh; path; prompt |])
+        else (path, [| path; prompt |])
+      in
       let input, output, error =
-        Unix.open_process_args_full path [| path; prompt |] (Array.of_list env)
+        Unix.open_process_args_full command argv (Array.of_list env)
       in
       let stdout = In_channel.input_all input |> String.trim in
       let stderr = In_channel.input_all error |> String.trim in
@@ -80,22 +86,27 @@ let test_token_file_auth () =
         (String.equal
            (askpass_response env "Password for 'https://github.com':")
            "installation-token");
-      Unix.putenv name "";
-      assert_true "empty token file path fails startup resolution"
+      Unix.putenv name
+        (if Host.is_windows then "Z:\\onton-missing-token" else "");
+      assert_true "empty or missing token file path fails startup resolution"
         (String.equal (Managed_repo.infer_github_token ()) "");
       let env = env_list () in
       match value "GIT_ASKPASS" env with
       | None -> failwith "GIT_ASKPASS missing"
       | Some askpass ->
+          let command, argv =
+            if Host.is_windows then
+              let sh = Host.posix_shell () in
+              (sh, [| sh; askpass; "Password for 'https://github.com':" |])
+            else (askpass, [| askpass; "Password for 'https://github.com':" |])
+          in
           let input, output, error =
-            Unix.open_process_args_full askpass
-              [| askpass; "Password for 'https://github.com':" |]
-              (Array.of_list env)
+            Unix.open_process_args_full command argv (Array.of_list env)
           in
           let stdout = In_channel.input_all input in
           let _stderr = In_channel.input_all error in
           let status = Unix.close_process_full (input, output, error) in
-          assert_true "empty token file path fails askpass"
+          assert_true "empty or missing token file path fails askpass"
             (String.equal stdout "" && status <> Unix.WEXITED 0))
 
 let test_clean_env_scrubs_git_and_installs_auth () =
@@ -136,9 +147,14 @@ let test_clean_env_scrubs_git_and_installs_auth () =
       assert_true "GIT_DIR scrubbed"
         (not (List.exists (binding "GIT_DIR") github_env));
       assert_true "inherited Git config cannot re-enable hooks"
-        (value "GIT_CONFIG_COUNT" github_env = Some "1"
+        (value "GIT_CONFIG_COUNT" github_env
+         = Some (if Host.is_windows then "2" else "1")
         && value "GIT_CONFIG_KEY_0" github_env = Some "core.hooksPath"
-        && value "GIT_CONFIG_VALUE_0" github_env = Some "/dev/null");
+        && value "GIT_CONFIG_VALUE_0" github_env = Some Host.null_device);
+      if Host.is_windows then
+        assert_true "Windows Git long paths enabled"
+          (value "GIT_CONFIG_KEY_1" github_env = Some "core.longpaths"
+          && value "GIT_CONFIG_VALUE_1" github_env = Some "true");
       assert_true "Git observes actual objects and ancestry"
         (value "GIT_NO_REPLACE_OBJECTS" github_env = Some "1"
         && value "GIT_GRAFT_FILE" github_env = Some "");

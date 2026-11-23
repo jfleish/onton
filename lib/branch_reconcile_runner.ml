@@ -17,9 +17,7 @@ let checkpoint ~runtime ~persist ~patch_id event =
 
 let new_recovery_id () =
   try
-    let entropy = Bytes.create 16 in
-    In_channel.with_open_bin "/dev/urandom" (fun input ->
-        really_input input entropy 0 (Bytes.length entropy));
+    let entropy = Host.random_bytes 16 in
     Ok (Branch_reconcile.Recovery_id.of_entropy entropy)
   with
   | Sys_error reason ->

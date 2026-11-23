@@ -1189,11 +1189,7 @@ let%test_module "session_id_sidecars" =
       Stdlib.Sys.mkdir dir 0o755;
       Stdlib.Fun.protect
         ~finally:(fun () ->
-          try
-            Stdlib.Sys.command
-              (Printf.sprintf "rm -rf %s" (Stdlib.Filename.quote dir))
-            |> ignore
-          with _ -> ())
+          Host.rm_rf dir)
         (fun () -> f (Stdlib.Filename.concat dir "snapshot.json"))
 
     let%test "load overlays sidecar for crashed busy session missing id" =

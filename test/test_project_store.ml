@@ -43,15 +43,7 @@ let () =
       | Some value -> Unix.putenv "ONTON_DATA_DIR" value
       | None -> Unix.unsetenv "ONTON_DATA_DIR");
       if Sys.file_exists artifacts then Unix.chmod artifacts 0o755;
-      let rec remove path =
-        if Sys.is_directory path then (
-          Array.iter
-            (fun name -> remove (Filename.concat path name))
-            (Sys.readdir path);
-          Unix.rmdir path)
-        else Sys.remove path
-      in
-      remove root)
+      Host.rm_rf root)
     (fun () ->
       let source = Filename.concat root "source.yaml" in
       write_file source "value: before\n";
@@ -82,7 +74,11 @@ let () =
       Unix.chmod artifacts 0o555;
       Project_store.publish_gameplan_artifact ~project_name;
       Unix.chmod artifacts 0o755;
-      assert (read_file artifact = valid);
+      if Host.is_windows then
+        assert (
+          Yojson.Safe.from_string (read_file artifact)
+          = `Assoc [ ("value", `String "next") ])
+      else assert (read_file artifact = valid);
       assert (Array.to_list (Sys.readdir artifacts) = [ "gameplan.json" ]);
       assert (Sys.is_directory dir));
   assert (Sys.getenv_opt "ONTON_DATA_DIR" = old_data_dir);

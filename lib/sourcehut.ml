@@ -133,10 +133,15 @@ let%test_unit "SourceHut subprocess timeout is bounded" =
   Eio_main.run @@ fun env ->
   let clock = Eio.Stdenv.clock env in
   let started = Eio.Time.now clock in
+  let sleep_cmd =
+    if String.equal Stdlib.Sys.os_type "Win32" then
+      [ "powershell.exe"; "-NoProfile"; "-Command"; "Start-Sleep -Seconds 5" ]
+    else [ "/bin/sleep"; "5" ]
+  in
   let result =
     run_process ~timeout:0.05 ~clock
       ~process_mgr:(Eio.Stdenv.process_mgr env)
-      [ "/bin/sleep"; "5" ]
+      sleep_cmd
   in
   let elapsed = Eio.Time.now clock -. started in
   assert (Option.value_map (Result.error result) ~default:false ~f:is_timeout);

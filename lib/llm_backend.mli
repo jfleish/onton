@@ -42,6 +42,21 @@ val emit_spawn_started :
   env:string array ->
   unit
 
+val spawn_and_stream_with_stdin :
+  stdin_data:string ->
+  process_mgr:_ Eio.Process.mgr ->
+  clock:_ Eio.Time.clock ->
+  timeout:float ->
+  cwd:Eio.Fs.dir_ty Eio.Path.t ->
+  env:string array ->
+  setsid_exec:string option ->
+  args:string list ->
+  session_uuid:string option ->
+  patch_id:Types.Patch_id.t ->
+  process_line:(string -> Types.Stream_event.t list) ->
+  on_event:(Types.Stream_event.t -> unit) ->
+  result
+
 val spawn_and_stream :
   process_mgr:_ Eio.Process.mgr ->
   clock:_ Eio.Time.clock ->

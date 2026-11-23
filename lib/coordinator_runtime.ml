@@ -20,11 +20,7 @@ let wire frame = get (V.encode_host frame)
 let json bytes = Yojson.Safe.from_string bytes
 
 let next_id () =
-  let bytes = Bytes.create 16 in
-  let ch = Stdlib.open_in_bin "/dev/urandom" in
-  Stdlib.Fun.protect
-    ~finally:(fun () -> Stdlib.close_in ch)
-    (fun () -> Stdlib.really_input ch bytes 0 16);
+  let bytes = Host.random_bytes 16 in
   "coord-" ^ Stdlib.Digest.to_hex (Stdlib.Digest.bytes bytes)
 
 let run (type e) ~system ~client ~store ~(config : Coordinator_config.t)

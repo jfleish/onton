@@ -5,7 +5,6 @@ open Base
 open Ppx_yojson_conv_lib.Yojson_conv.Primitives
 
 let data_dir = Host.data_dir
-
 let slugify = Project_identity.slug
 
 let project_dir project_name =
@@ -311,6 +310,8 @@ let write_file_atomically ~path ~content =
       (fun () ->
         Stdlib.output_string oc content;
         Stdlib.flush oc);
+    (if Host.is_windows && Stdlib.Sys.file_exists path then
+       try Unix.chmod path 0o600 with _ -> ());
     Stdlib.Sys.rename tmp_path path;
     Ok ()
   with exn ->
@@ -430,11 +431,7 @@ let with_temp_data_dir f =
       (match old with
       | Some value -> Unix.putenv "ONTON_DATA_DIR" value
       | None -> Unix.unsetenv "ONTON_DATA_DIR");
-      try
-        ignore
-          (Stdlib.Sys.command
-             (Printf.sprintf "rm -rf %s" (Stdlib.Filename.quote dir)))
-      with _ -> ())
+      Host.rm_rf dir)
     (fun () -> f ())
 
 let read_file_for_test path =

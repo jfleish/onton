@@ -8,6 +8,7 @@
 #include <caml/mlvalues.h>
 #include <caml/memory.h>
 #include <caml/fail.h>
+#include <caml/alloc.h>
 
 #ifdef _WIN32
 
@@ -156,4 +157,53 @@ CAMLprim value caml_onton_parent_alive(value v_pid) {
   CAMLreturn(Val_bool(errno == EPERM));
 }
 
+#endif
+
+/* [Unix.getpid] and [Unix.create_process] do not yield OS process ids on
+ * Windows: the former is not usable with OpenProcess by other processes and
+ * the latter returns the child's process HANDLE. These stubs translate both
+ * to real PIDs; on POSIX they are the identity. */
+#ifdef _WIN32
+CAMLprim value caml_onton_os_pid(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_long((long)GetCurrentProcessId()));
+}
+
+CAMLprim value caml_onton_pid_of_spawned(value v_handle) {
+  CAMLparam1(v_handle);
+  DWORD pid = GetProcessId((HANDLE)Long_val(v_handle));
+  CAMLreturn(Val_long((long)pid));
+}
+
+CAMLprim value caml_onton_random_bytes(value v_len) {
+  CAMLparam1(v_len);
+  CAMLlocal1(result);
+  intnat len = Long_val(v_len);
+  if (len < 0) caml_invalid_argument("Host.random_bytes");
+  result = caml_alloc_string((mlsize_t)len);
+  HMODULE library = LoadLibraryW(L"advapi32.dll");
+  if (library == NULL) caml_failwith("Host.random_bytes: LoadLibrary failed");
+  typedef BOOLEAN (APIENTRY *rtl_gen_random_fn)(PVOID, ULONG);
+  rtl_gen_random_fn generate = (rtl_gen_random_fn)GetProcAddress(library, "SystemFunction036");
+  if (generate == NULL || !generate((PVOID)Bytes_val(result), (ULONG)len)) {
+    FreeLibrary(library);
+    caml_failwith("Host.random_bytes: system RNG failed");
+  }
+  FreeLibrary(library);
+  CAMLreturn(result);
+}
+#else
+#include <unistd.h>
+
+CAMLprim value caml_onton_os_pid(value unit) {
+  (void)unit;
+  return Val_long((long)getpid());
+}
+
+CAMLprim value caml_onton_pid_of_spawned(value v_handle) { return v_handle; }
+
+CAMLprim value caml_onton_random_bytes(value v_len) {
+  (void)v_len;
+  caml_failwith("Host.random_bytes: Windows RNG used on POSIX");
+}
 #endif

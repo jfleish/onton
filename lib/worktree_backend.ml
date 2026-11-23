@@ -121,7 +121,7 @@ let make ~fs ~clock ~process_mgr ~repo_root ~(config : config) ~timeout_seconds
         try
           if not Host.is_windows then Unix.access path [ Unix.X_OK ];
           if Stdlib.Sys.is_directory path then None else Some (canonical path)
-        with Unix.Unix_error _ -> None)
+        with Unix.Unix_error _ | Sys_error _ -> None)
   in
   let probe name =
     match Hashtbl.find checked_executables name with

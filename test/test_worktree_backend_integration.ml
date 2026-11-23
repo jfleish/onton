@@ -204,7 +204,8 @@ let fixture env config =
                   let bin = Filename.concat repo "discovery-bin" in
                   Unix.mkdir bin 0o700;
                   Unix.symlink executable (Filename.concat bin "simgit");
-                  Unix.putenv "PATH" (bin ^ ":" ^ old_path);
+                  Unix.putenv "PATH"
+                    (bin ^ (if Host.is_windows then ";" else ":") ^ old_path);
                   G.sh ~dir:repo
                     (Filename.quote executable ^ " add external --path "
                     ^ Filename.quote (p "external"));
@@ -521,7 +522,8 @@ let concurrent_reset env =
       Fun.protect
         ~finally:(fun () -> Unix.putenv "PATH" old_path)
         (fun () ->
-          Unix.putenv "PATH" (bin ^ ":" ^ old_path);
+          Unix.putenv "PATH"
+            (bin ^ (if Host.is_windows then ";" else ":") ^ old_path);
           let module B =
             (val Worktree_backend.make ~fs:(Eio.Stdenv.fs env)
                    ~clock:(Eio.Stdenv.clock env)
@@ -588,7 +590,14 @@ let mixed_reconcile env =
                      [
                        `Assoc
                          [
-                           ("worktree", `String path);
+                           ( "worktree",
+                             `String
+                               (if Host.is_windows then
+                                  String.map
+                                    (fun c ->
+                                      if Char.equal c '\\' then '/' else c)
+                                    path
+                                else path) );
                            ("mode", `String "overlay");
                          ];
                      ])
@@ -765,7 +774,9 @@ let discovery env =
       Fun.protect
         ~finally:(fun () -> Unix.putenv "PATH" old_path)
         (fun () ->
-          Unix.putenv "PATH" (bin ^ ":/usr/bin:/bin");
+          Unix.putenv "PATH"
+            (if Host.is_windows then bin ^ ";" ^ old_path
+             else bin ^ ":/usr/bin:/bin");
           let sg = script "sg" good in
           ignore (make ());
           let canonical = script "simgit" good in
@@ -807,7 +818,8 @@ let unavailable_legacy_owner env =
       Fun.protect
         ~finally:(fun () -> Unix.putenv "PATH" old_path)
         (fun () ->
-          Unix.putenv "PATH" (bin ^ ":" ^ old_path);
+          Unix.putenv "PATH"
+            (bin ^ (if Host.is_windows then ";" else ":") ^ old_path);
           let make () =
             Worktree_backend.make ~fs:(Eio.Stdenv.fs env)
               ~clock:(Eio.Stdenv.clock env)
@@ -824,7 +836,13 @@ let unavailable_legacy_owner env =
                  [
                    `Assoc
                      [
-                       ("worktree", `String path);
+                       ( "worktree",
+                         `String
+                           (if Host.is_windows then
+                              String.map
+                                (fun c -> if Char.equal c '\\' then '/' else c)
+                                path
+                            else path) );
                        ("branch", `String "legacy");
                        ("mode", `String "cow-clone");
                      ];
@@ -835,7 +853,7 @@ let unavailable_legacy_owner env =
             ("#!/bin/sh\n\
               case \"$1\" in\n\
               --json) echo '{\"identity\":\"simgit\",\"version\":\"0.3.0\"}' ;;\n\
-              list) echo " ^ Filename.quote listing
+              list) printf '%s\\n' " ^ Filename.quote listing
            ^ ";;\n\
               repair) echo '{\"failed\":[]}' ;;\n\
               remove) git worktree remove \"$2\" && touch "
@@ -927,9 +945,13 @@ let lifecycle_sequences env =
             G.run_git ~cwd:repo [ "branch"; "sequence"; base ];
             let path = Filename.concat repo "checkout" in
             let canonical = Worktree_backend.canonical path in
-            let alias = Filename.concat repo "alias" in
-            Unix.symlink repo alias;
-            let aliased_path = Filename.concat alias "checkout" in
+            let aliased_path =
+              if Host.is_windows then path
+              else
+                let alias = Filename.concat repo "alias" in
+                Unix.symlink repo alias;
+                Filename.concat alias "checkout"
+            in
             let requested = branch "sequence" in
             let module B =
               (val Worktree_backend.make ~fs:(Eio.Stdenv.fs env)
@@ -994,8 +1016,15 @@ let () =
       renamed_checkout env;
       failures env;
       discovery env;
-      unavailable_legacy_owner env;
-      clean_failed_creation env;
+      if Host.is_windows then
+        print_endline
+          "legacy simgit owner recovery: SKIPPED (simgit is not available on \
+           Windows)"
+      else unavailable_legacy_owner env;
+      if Host.is_windows then
+        print_endline
+          "failed simgit provisioning cleanup: SKIPPED (simgit is not available on Windows)"
+      else clean_failed_creation env;
       failed_reset env;
       concurrent_reset env;
       mixed_reconcile env;

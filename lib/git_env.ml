@@ -123,6 +123,22 @@ let with_configured_tokens env =
 
 let clean_env () =
   let askpass = Stdlib.Lazy.force askpass_script in
+  let git_config =
+    if Host.is_windows then
+      [
+        "GIT_CONFIG_COUNT=2";
+        "GIT_CONFIG_KEY_0=core.hooksPath";
+        "GIT_CONFIG_VALUE_0=" ^ Host.null_device;
+        "GIT_CONFIG_KEY_1=core.longpaths";
+        "GIT_CONFIG_VALUE_1=true";
+      ]
+    else
+      [
+        "GIT_CONFIG_COUNT=1";
+        "GIT_CONFIG_KEY_0=core.hooksPath";
+        "GIT_CONFIG_VALUE_0=" ^ Host.null_device;
+      ]
+  in
   let fixed_env_names =
     [
       "GIT_TERMINAL_PROMPT";
@@ -139,17 +155,15 @@ let clean_env () =
   (* These fixed bindings are installed after the broad GIT_* scrub so the git
      subprocess receives only the noninteractive Git variables we install. *)
   |> List.append
-       [
-         (* Scope proofs must inspect the objects that a remote will receive,
-            never a local replacement or grafted ancestry view. *)
-         "GIT_NO_REPLACE_OBJECTS=1";
-         "GIT_GRAFT_FILE=";
-         "GIT_CONFIG_COUNT=1";
-         "GIT_CONFIG_KEY_0=core.hooksPath";
-         "GIT_CONFIG_VALUE_0=" ^ Host.null_device;
-         "GIT_TERMINAL_PROMPT=0";
-         "GIT_ASKPASS=" ^ askpass;
-         "GCM_INTERACTIVE=never";
-         "GH_PROMPT_DISABLED=1";
-       ]
+       ([
+          (* Scope proofs must inspect the objects that a remote will receive,
+             never a local replacement or grafted ancestry view. *)
+          "GIT_NO_REPLACE_OBJECTS=1";
+          "GIT_GRAFT_FILE=";
+          "GIT_TERMINAL_PROMPT=0";
+          "GIT_ASKPASS=" ^ askpass;
+          "GCM_INTERACTIVE=never";
+          "GH_PROMPT_DISABLED=1";
+        ]
+       @ git_config)
   |> Array.of_list

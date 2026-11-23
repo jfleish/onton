@@ -41,7 +41,7 @@ let supervise ~argv ~input ~limit =
     Stdlib.Fun.protect
       ~finally:(fun () ->
         Option.iter !child ~f:(fun pid ->
-            Host.stop_process pid;
+            Host.stop_process (Host.spawned_pid pid);
             wait pid);
         List.iter !owned ~f:close)
       (fun () ->
@@ -49,7 +49,8 @@ let supervise ~argv ~input ~limit =
         and out_r, out_w = pipe ()
         and err_r, err_w = pipe () in
         let args =
-          Process_tree.supervised_command ~supervisor ~streaming:false argv
+          Process_tree.supervised_command ~supervisor ~streaming:false
+            (Host.windows_command argv)
           |> Array.of_list
         in
         let pid =
@@ -232,7 +233,7 @@ let disconnect ?(timeout = 5.) a =
   else if (not (Float.is_finite timeout)) || Float.(timeout <= 0.) then
     Error "invalid supervisor teardown timeout"
   else (
-    Host.stop_process a.pid;
+    Host.stop_process (Host.spawned_pid a.pid);
     let rec await attempts =
       match Unix.waitpid [ Unix.WNOHANG ] a.pid with
       | pid, Unix.WEXITED 0 when pid = a.pid ->
@@ -298,17 +299,18 @@ let connect t ~run_id ~coordinator_id ~owner_epoch ~revision ~request_id
         let argv =
           Process_tree.supervised_command ~acknowledge_tree:true ~supervisor
             ~streaming:true
-            [
-              t.helper;
-              "resources";
-              "connect";
-              run_id;
-              coordinator_id;
-              Int64.to_string owner_epoch;
-              Int64.to_string revision;
-              request_id;
-              resource_id;
-            ]
+            (Host.windows_command
+               [
+                 t.helper;
+                 "resources";
+                 "connect";
+                 run_id;
+                 coordinator_id;
+                 Int64.to_string owner_epoch;
+                 Int64.to_string revision;
+                 request_id;
+                 resource_id;
+               ])
           |> Array.of_list
         in
         let pid =

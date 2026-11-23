@@ -13,11 +13,23 @@ open Onton_core
     full subprocess → line-reading → parsing → callback pipeline without
     requiring any LLM CLI to be installed. *)
 
+let sh_args script = [ Host.posix_shell (); "-c"; script ]
+
+let print_args payload =
+  if Host.is_windows then
+    let script =
+      if String.is_suffix payload ~suffix:"\n" then
+        Printf.sprintf "printf '%%s' '%s'" payload
+      else Printf.sprintf "printf '%%s\\n' '%s'" payload
+    in
+    sh_args script
+  else [ "printf"; "%s"; payload ]
+
 let smoke ?setsid_exec ~process_mgr ~clock ~cwd ~ndjson ~process_line () =
   let events = ref [] in
   let on_event ev = events := ev :: !events in
   let payload = String.concat ~sep:"\n" ndjson in
-  let args = [ "printf"; "%s"; payload ] in
+  let args = print_args payload in
   let env = Unix.environment () in
   let patch_id = Types.Patch_id.of_string "smoke" in
   let result =
@@ -100,13 +112,11 @@ let () =
     let events = ref [] in
     let on_event ev = events := ev :: !events in
     let args =
-      [
-        "sh";
-        "-c";
-        Printf.sprintf "perl -e 'print q!%s!; print q!x! x %d; print qq!%s!;'"
-          {|{"type":"item.completed","item":{"type":"agent_message","text":"|}
-          (String.length large_text) {|"}}\n{"type":"turn.completed"}\n|};
-      ]
+      sh_args
+        (Printf.sprintf
+           "perl -e 'print q!%s!; print q!x! x %d; print qq!%s!;'"
+           {|{"type":"item.completed","item":{"type":"agent_message","text":"|}
+           (String.length large_text) {|"}}\n{"type":"turn.completed"}\n|})
     in
     let result =
       Llm_backend.spawn_and_stream ~process_mgr ~clock ~timeout:60.0 ~cwd
@@ -150,7 +160,7 @@ let () =
     let result =
       Llm_backend.spawn_and_stream ~process_mgr ~clock ~timeout:60.0 ~cwd
         ~env:(Unix.environment ()) ~setsid_exec:None
-        ~args:[ "printf"; "%s"; "not-json\n" ]
+        ~args:(print_args "not-json\n")
         ~session_uuid:None
         ~patch_id:(Types.Patch_id.of_string "smoke")
         ~process_line:(fun _ -> [])
@@ -260,7 +270,7 @@ let () =
        SIGTERM would target sh and leave sleep orphaned until kernel
        reparenting, which slows teardown on loaded machines. *)
     let args =
-      [ "sh"; "-c"; Printf.sprintf "printf '%s\\n'; exec sleep 30" payload ]
+      sh_args (Printf.sprintf "printf '%s\\n'; exec sleep 30" payload)
     in
     let started = Unix.gettimeofday () in
     let result =
@@ -298,15 +308,12 @@ let () =
       Llm_backend.spawn_and_stream ~process_mgr ~clock ~timeout:30.0 ~cwd
         ~env:(Unix.environment ()) ~setsid_exec:None
         ~args:
-          [
-            "sh";
-            "-c";
-            Printf.sprintf
-              "printf '%s\\n'; sleep 0.2; i=0; while [ \"$i\" -lt 2048 ]; do \
-               printf '%s\\n'; i=$((i + 1)); done; printf 'flush complete\\n' \
-               >&2"
-              payload flush_line;
-          ]
+          (sh_args
+             (Printf.sprintf
+                "printf '%s\\n'; sleep 0.2; i=0; while [ \"$i\" -lt 2048 ]; do \
+                 printf '%s\\n'; i=$((i + 1)); done; printf 'flush complete\\n' \
+                 >&2"
+                payload flush_line))
         ~session_uuid:None
         ~patch_id:(Types.Patch_id.of_string "smoke")
         ~process_line:process_line_claude ~on_event
@@ -361,7 +368,7 @@ let () =
           let result =
             Llm_backend.spawn_and_stream ~process_mgr ~clock ~timeout:30.0 ~cwd
               ~env:(Unix.environment ()) ~setsid_exec:(Some shim)
-              ~args:[ "sh"; "-c"; script ] ~session_uuid:None
+              ~args:(sh_args script) ~session_uuid:None
               ~patch_id:(Types.Patch_id.of_string "smoke")
               ~process_line:process_line_claude ~on_event:(fun _ -> ())
           in
@@ -389,7 +396,7 @@ let () =
   let timeout_test () =
     let events = ref [] in
     let on_event ev = events := ev :: !events in
-    let args = [ "sh"; "-c"; "sleep 30" ] in
+    let args = sh_args "sleep 30" in
     let started = Unix.gettimeofday () in
     let result =
       Llm_backend.spawn_and_stream ~process_mgr ~clock ~timeout:1.0 ~cwd
@@ -450,7 +457,7 @@ printf '{"type":"result","result":"done","stop_reason":"end_turn"}\n'
 # setsid lets the parent's SIGKILL sweep it up.
 exit 0|}
           in
-          let args = [ "sh"; "-c"; script ] in
+          let args = sh_args script in
           let started = Unix.gettimeofday () in
           let result =
             Llm_backend.spawn_and_stream ~process_mgr ~clock ~timeout:30.0 ~cwd

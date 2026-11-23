@@ -29,7 +29,12 @@ let () =
       (fun () ->
         tui_rendered := true;
         Eio.Time.sleep clock 0.5;
-        (* Close pipe FDs to unblock the systhread *)
+        (* Write a byte to unblock the systhread read portably across
+           platforms. Closing the read fd while another thread is blocked in
+           read is undefined on Windows. *)
+        (try ignore (Unix.write_substring write_fd "x" 0 1)
+         with Unix.Unix_error _ -> ());
+        Eio.Time.sleep clock 0.05;
         (try Unix.close read_fd with Unix.Unix_error _ -> ());
         try Unix.close write_fd with Unix.Unix_error _ -> ());
     ];

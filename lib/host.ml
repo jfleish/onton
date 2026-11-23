@@ -16,6 +16,18 @@ external terminate_process : int -> unit = "caml_onton_terminate_process"
 external attach_job : int -> bool = "caml_onton_attach_job"
 external terminate_job : int -> unit = "caml_onton_terminate_job"
 external close_job : int -> unit = "caml_onton_close_job"
+external os_pid_stub : unit -> int = "caml_onton_os_pid"
+external pid_of_spawned_stub : int -> int = "caml_onton_pid_of_spawned"
+external windows_random_bytes : int -> bytes = "caml_onton_random_bytes"
+
+(** This process's OS PID, as other processes see it. On Windows [Unix.getpid]
+    is not usable with [OpenProcess] from another process. *)
+let os_pid () = os_pid_stub ()
+
+(** The OS PID of a child returned by [Unix.create_process]/[_env]. On Windows
+    OCaml returns the child's process handle there; [waitpid] still takes the
+    raw value, but PID-based APIs ([stop_process], Job Objects) need this. *)
+let spawned_pid raw = if is_windows then pid_of_spawned_stub raw else raw
 
 (** Hard-stop [pid]. POSIX sends SIGTERM so the target can clean up; Windows
     terminates it, which also tears down any Job Object it owns. *)
@@ -77,6 +89,33 @@ let owner_only_dir_ok path =
 
 (** Base directory for user configuration. Windows uses [%APPDATA%\\onton];
     POSIX keeps the XDG layout. *)
+let posix_shell () =
+  if not is_windows then "/bin/sh"
+  else
+    let path_dirs =
+      match getenv_nonempty "PATH" with
+      | None -> []
+      | Some path -> String.split path ~on:';'
+    in
+    let from_path =
+      List.find_map path_dirs ~f:(fun dir ->
+          let candidate = Stdlib.Filename.concat dir "sh.exe" in
+          if Stdlib.Sys.file_exists candidate then Some candidate else None)
+    in
+    let common =
+      [
+        "C:\\Program Files\\Git\\bin\\sh.exe";
+        "C:\\Program Files (x86)\\Git\\bin\\sh.exe";
+      ]
+    in
+    Option.value
+      (match from_path with
+      | Some _ as found -> found
+      | None ->
+          List.find_map common ~f:(fun candidate ->
+              if Stdlib.Sys.file_exists candidate then Some candidate else None))
+      ~default:"sh.exe"
+
 let windows_command args =
   if not is_windows then args
   else
@@ -108,10 +147,19 @@ let windows_command args =
                     if Stdlib.Sys.file_exists path then Some path else None))
         in
         match found with
+        | None
+          when List.exists [ "sh"; "bash"; "/bin/sh"; "sh.exe" ] ~f:(fun name ->
+                   String.equal command name) ->
+            posix_shell () :: rest
         | Some path
           when String.is_suffix path ~suffix:".cmd"
                || String.is_suffix path ~suffix:".bat" ->
             "cmd.exe" :: "/d" :: "/s" :: "/c" :: path :: rest
+        | Some path
+          when String.is_suffix path ~suffix:".sh"
+               || String.is_empty (Stdlib.Filename.extension path) ->
+            let shell = posix_shell () in
+            shell :: path :: rest
         | Some path -> path :: rest
         | None -> args)
 
@@ -128,3 +176,35 @@ let config_dir () =
               Stdlib.Filename.concat
                 (Stdlib.Filename.concat (home_dir_or_cwd ()) ".config")
                 "onton"))
+
+(** Recursively remove [path] without spawning a shell. Symlinks are unlinked,
+    never followed. Windows refuses to delete read-only files (Git marks pack
+    and object files read-only), so each entry is made writable before it is
+    removed. Errors are ignored: this is best-effort cleanup. *)
+let rec rm_rf path =
+  match Unix.lstat path with
+  | exception Unix.Unix_error _ -> ()
+  | stat -> (
+      match stat.Unix.st_kind with
+      | Unix.S_DIR -> (
+          (match Stdlib.Sys.readdir path with
+          | children ->
+              Array.iter children ~f:(fun child ->
+                  rm_rf (Stdlib.Filename.concat path child))
+          | exception Sys_error _ -> ());
+          (if is_windows then try Unix.chmod path 0o700 with _ -> ());
+          try Unix.rmdir path with _ -> ())
+      | Unix.S_REG | Unix.S_CHR | Unix.S_BLK | Unix.S_LNK | Unix.S_FIFO
+      | Unix.S_SOCK -> (
+          (if is_windows then try Unix.chmod path 0o600 with _ -> ());
+          try Unix.unlink path with _ -> ()))
+
+(** [n] bytes of operating-system entropy. POSIX reads [/dev/urandom]; Windows
+    uses the system CSPRNG through [SystemFunction036]. *)
+let random_bytes n =
+  let bytes = Bytes.create n in
+  if is_windows then windows_random_bytes n
+  else (
+    Stdlib.In_channel.with_open_bin "/dev/urandom" (fun input ->
+        Stdlib.really_input input bytes 0 n);
+    bytes)

@@ -33,8 +33,10 @@ let gameplan : Gameplan.t =
     reachability_traces = [];
   }
 
-let () =
-  let directory = Filename.temp_file ~temp_dir:"/tmp" "onton-c-" "" in
+let run () =
+  let directory =
+    Filename.temp_file ~temp_dir:(Filename.get_temp_dir_name ()) "onton-c-" ""
+  in
   Sys.remove directory;
   Unix.mkdir directory 0o700;
   let path = Filename.concat directory "control.sock" in
@@ -146,3 +148,8 @@ let () =
   print_endline
     "coordinator socket: same-UID intake, serialized durable responses, \
      sleep/wake telemetry, uncertain commit and shutdown"
+
+let () =
+  if Host.is_windows then
+    print_endline "coordinator socket: SKIPPED (Windows AF_UNIX lifecycle)"
+  else run ()

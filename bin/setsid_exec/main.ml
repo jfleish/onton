@@ -17,6 +17,7 @@ external win_attach_job : int -> bool = "caml_onton_win_attach_job"
 external win_terminate_job : unit -> unit = "caml_onton_win_terminate_job"
 external win_close_job : unit -> unit = "caml_onton_win_close_job"
 external win_signal_tree : unit -> unit = "caml_onton_win_signal_tree"
+external win_pid_of_spawned : int -> int = "caml_onton_win_pid_of_spawned"
 
 external supervisor_parent_alive : int -> bool
   = "caml_onton_supervisor_parent_alive"
@@ -207,7 +208,7 @@ let supervise_windows ?parent ~streaming ~acknowledge_tree ~guards argv =
     Unix.create_process_env argv.(0) argv (Unix.environment ()) Unix.stdin
       Unix.stdout Unix.stderr
   in
-  ignore (win_attach_job child_pid);
+  ignore (win_attach_job (win_pid_of_spawned child_pid));
   List.iter Unix.close guard_fds;
   let rec wait_child () =
     try snd (Unix.waitpid [] child_pid)

@@ -321,7 +321,8 @@ CAMLprim value caml_onton_supervisor_parent_alive(value v_pid) {
   DWORD pid = (DWORD)Int_val(v_pid);
   if (pid == 0) CAMLreturn(Val_false);
   HANDLE h = OpenProcess(SYNCHRONIZE, FALSE, pid);
-  if (h == NULL) CAMLreturn(Val_false);
+  if (h == NULL)
+    CAMLreturn(Val_bool(GetLastError() == ERROR_ACCESS_DENIED));
   DWORD result = WaitForSingleObject(h, 0);
   CloseHandle(h);
   CAMLreturn(Val_bool(result == WAIT_TIMEOUT));
@@ -518,3 +519,31 @@ CAMLprim value caml_onton_supervisor_parent_alive(value v_pid) {
 }
 
 #endif /* _WIN32 */
+
+/* The OS process id of a child returned by [Unix.create_process]. On Windows
+ * OCaml returns the child's process HANDLE there, not its PID, so APIs that
+ * take a PID (OpenProcess, Job Objects) need it translated. On POSIX the
+ * value already is the PID. */
+#ifdef _WIN32
+CAMLprim value caml_onton_win_pid_of_spawned(value v_handle) {
+  CAMLparam1(v_handle);
+  DWORD pid = GetProcessId((HANDLE)Long_val(v_handle));
+  CAMLreturn(Val_long((long)pid));
+}
+
+/* OCaml's [Unix.getpid] on Windows is not the OS process id that other
+ * processes can pass to OpenProcess. */
+CAMLprim value caml_onton_os_pid(value unit) {
+  CAMLparam1(unit);
+  CAMLreturn(Val_long((long)GetCurrentProcessId()));
+}
+#else
+CAMLprim value caml_onton_win_pid_of_spawned(value v_handle) {
+  return v_handle;
+}
+
+CAMLprim value caml_onton_os_pid(value unit) {
+  (void)unit;
+  return Val_long((long)getpid());
+}
+#endif

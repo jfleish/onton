@@ -12,7 +12,30 @@ let binary name fallback =
       | Some path -> Unix.realpath path
       | None -> failwith ("missing " ^ fallback))
 
+let python_exe () =
+  let candidates =
+    if String.equal Stdlib.Sys.os_type "Win32" then [ "python"; "python3"; "py" ]
+    else [ "python3"; "python" ]
+  in
+  let rec find = function
+    | [] -> "python3"
+    | cmd :: rest -> (
+        let probe =
+          if String.equal Stdlib.Sys.os_type "Win32" then
+            Printf.sprintf "where %s >NUL 2>NUL" cmd
+          else Printf.sprintf "command -v %s >/dev/null 2>&1" cmd
+        in
+        match Stdlib.Sys.command probe with
+        | 0 -> cmd
+        | _ -> find rest)
+  in
+  find candidates
+
 let () =
+  if String.equal Stdlib.Sys.os_type "Win32" then (
+    print_endline
+      "SKIP: distributed coordinator process fixture requires Unix domain sockets")
+  else
   let supervisor =
     match Sys.getenv_opt "ONTON_SETSID_EXEC_BINARY" with
     | Some _ as value -> value
@@ -25,6 +48,7 @@ let () =
     binary "ONTON_COORDINATOR_BINARY" "ONTON_COORDINATOR_BINARY_DEFAULT"
   in
   let worker = binary "ONTON_WORKER_BINARY" "ONTON_WORKER_BINARY_DEFAULT" in
+  let python = python_exe () in
   let template : Pr_state.t =
     {
       pr_number = Some (Types.Pr_number.of_int 1);
@@ -61,7 +85,7 @@ let () =
             (Yojson.Safe.to_string (Pr_state.yojson_of_t template)));
       let argv =
         [|
-          "python3";
+          python;
           "distributed_coordinator_fixture.py";
           "--test";
           coordinator;
@@ -70,7 +94,7 @@ let () =
         |]
       in
       let pid =
-        Unix.create_process_env "python3" argv
+        Unix.create_process_env python argv
           (Onton_test_support.Git_env.clean_env ())
           Unix.stdin Unix.stdout Unix.stderr
       in

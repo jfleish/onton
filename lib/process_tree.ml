@@ -69,7 +69,7 @@ let supervised_command ?(acknowledge_tree = false) ~supervisor ~streaming args =
     else "--supervise-parent"
   in
   supervisor :: mode
-  :: Int.to_string (Unix.getpid ())
+  :: Int.to_string (Host.os_pid ())
   :: "--command-guards"
   :: Int.to_string (List.length guards)
   :: (guards @ args)
@@ -120,7 +120,7 @@ let run_sync ?(timeout = 120.) ~env args =
          child still anchors its PID; ECHILD forbids signaling a recycled PID. *)
       match wait [ Unix.WNOHANG ] pid with
       | 0, _ ->
-          (if Host.is_windows then Host.stop_process pid
+          (if Host.is_windows then Host.stop_process (Host.spawned_pid pid)
            else
              try Unix.kill pid Stdlib.Sys.sigterm
              with Unix.Unix_error (Unix.ESRCH, _, _) -> ());
@@ -226,14 +226,15 @@ let run_status_windows ?cwd ?stdout ?stderr ~process_mgr ?clock ~env args =
               Eio.Flow.close stderr_w;
               Eio.Flow.close stdin_w;
               let read_flow flow buffer =
-                let bytes = Bytes.create 8192 in
+                (* [Cstruct.of_bytes] copies into a fresh bigarray, so reads
+                   must go into a Cstruct and be copied out of it. *)
+                let chunk = Cstruct.create 8192 in
                 let rec loop () =
                   try
-                    let n =
-                      Eio.Flow.single_read flow (Cstruct.of_bytes bytes)
-                    in
+                    let n = Eio.Flow.single_read flow chunk in
                     if n > 0 then (
-                      Buffer.add_subbytes buffer bytes ~pos:0 ~len:n;
+                      Buffer.add_string buffer
+                        (Cstruct.to_string chunk ~off:0 ~len:n);
                       loop ())
                   with End_of_file | Eio.Exn.Io _ -> ()
                 in

@@ -16,7 +16,7 @@ let ensure_open file =
   | None ->
       let channel =
         Stdlib.open_out_gen
-          [ Open_creat; Open_text; Open_append ]
+          [ Open_creat; Open_binary; Open_append ]
           0o644 file.path
       in
       file.channel <- Some channel;
@@ -130,12 +130,7 @@ let create ~project_name ~patch_id:_ ~session_uuid =
       | Telemetry.Event.Free_form _ -> ());
   }
 
-let rm_rf path =
-  try
-    ignore
-      (Stdlib.Sys.command
-         (Printf.sprintf "rm -rf %s" (Stdlib.Filename.quote path)))
-  with _ -> ()
+let rm_rf = Host.rm_rf
 
 let with_temp_data_dir f =
   let old = Stdlib.Sys.getenv_opt "ONTON_DATA_DIR" in

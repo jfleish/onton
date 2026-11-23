@@ -50,6 +50,7 @@ let run_streaming ~model ~effort ~extras ~process_mgr ~clock ~timeout
   let cwd_path = snd cwd in
   let args =
     build_args ~model ~effort ~extras ~cwd_path ~prompt ~resume_session
+    |> List.map ~f:(fun arg -> if String.equal arg prompt then "-" else arg)
   in
   let env =
     Spawn_env.merge_env ~base_env:(Unix.environment ())
@@ -71,9 +72,9 @@ let run_streaming ~model ~effort ~extras ~process_mgr ~clock ~timeout
   in
   let run_once () =
     Llm_backend.emit_spawn_started ~patch_id ~session_uuid ~prompt ~args ~env;
-    Llm_backend.spawn_and_stream ~process_mgr ~clock ~timeout ~cwd ~env
-      ~setsid_exec ~args ~session_uuid:(Some session_uuid) ~patch_id
-      ~process_line ~on_event
+    Llm_backend.spawn_and_stream_with_stdin ~stdin_data:prompt ~process_mgr
+      ~clock ~timeout ~cwd ~env ~setsid_exec ~args
+      ~session_uuid:(Some session_uuid) ~patch_id ~process_line ~on_event
   in
   let result = run_once () in
   if is_likely_auth_refresh_failure result then (

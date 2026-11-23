@@ -227,13 +227,14 @@ let () =
                    snapshot.Onton.Runtime.applied_control_ids)));
         ];
       assert (not (Sys.file_exists path));
-      Unix.chmod directory 0o755;
-      let rejected_shared_parent =
-        match
-          Onton.Control_server.run ~net ~runtime ~snapshot_path ~path ()
-        with
-        | () -> false
-        | exception Invalid_argument _ -> true
-      in
-      assert rejected_shared_parent;
-      Unix.chmod directory 0o700)
+      if not Onton.Host.is_windows then (
+        Unix.chmod directory 0o755;
+        let rejected_shared_parent =
+          match
+            Onton.Control_server.run ~net ~runtime ~snapshot_path ~path ()
+          with
+          | () -> false
+          | exception Invalid_argument _ -> true
+        in
+        assert rejected_shared_parent;
+        Unix.chmod directory 0o700))
