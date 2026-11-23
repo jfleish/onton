@@ -4,16 +4,7 @@
 open Base
 open Ppx_yojson_conv_lib.Yojson_conv.Primitives
 
-let data_dir () =
-  match Stdlib.Sys.getenv_opt "ONTON_DATA_DIR" with
-  | Some d when not (String.is_empty d) -> d
-  | Some _ | None -> (
-      match Stdlib.Sys.getenv_opt "XDG_DATA_HOME" with
-      | Some xdg -> Stdlib.Filename.concat xdg "onton"
-      | None ->
-          Stdlib.Filename.concat
-            (Stdlib.Filename.concat (Stdlib.Sys.getenv "HOME") ".local/share")
-            "onton")
+let data_dir = Host.data_dir
 
 let slugify = Project_identity.slug
 

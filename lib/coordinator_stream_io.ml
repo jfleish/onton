@@ -11,8 +11,8 @@ type t = {
 let create ~mono_clock attachment =
   let input = Resource_client.input attachment
   and output = Resource_client.output attachment in
-  Unix.set_nonblock input;
-  Unix.set_nonblock output;
+  Host.set_nonblock input;
+  Host.set_nonblock output;
   {
     input;
     output;

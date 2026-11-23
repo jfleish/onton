@@ -41,7 +41,7 @@ let supervise ~argv ~input ~limit =
     Stdlib.Fun.protect
       ~finally:(fun () ->
         Option.iter !child ~f:(fun pid ->
-            (try Unix.kill pid Stdlib.Sys.sigterm with _ -> ());
+            Host.stop_process pid;
             wait pid);
         List.iter !owned ~f:close)
       (fun () ->
@@ -58,9 +58,9 @@ let supervise ~argv ~input ~limit =
         in
         child := Some pid;
         List.iter [ in_r; out_w; err_w ] ~f:release;
-        Unix.set_nonblock in_w;
-        Unix.set_nonblock out_r;
-        Unix.set_nonblock err_r;
+        Host.set_nonblock in_w;
+        Host.set_nonblock out_r;
+        Host.set_nonblock err_r;
         let stdout = Buffer.create 256 and stderr = Buffer.create 256 in
         let written = ref 0 and reads = ref [ out_r; err_r ] in
         if String.is_empty input then release in_w;
@@ -232,7 +232,7 @@ let disconnect ?(timeout = 5.) a =
   else if (not (Float.is_finite timeout)) || Float.(timeout <= 0.) then
     Error "invalid supervisor teardown timeout"
   else (
-    (try Unix.kill a.pid Stdlib.Sys.sigterm with _ -> ());
+    Host.stop_process a.pid;
     let rec await attempts =
       match Unix.waitpid [ Unix.WNOHANG ] a.pid with
       | pid, Unix.WEXITED 0 when pid = a.pid ->
@@ -291,7 +291,9 @@ let connect t ~run_id ~coordinator_id ~owner_epoch ~revision ~request_id
     else
       let in_r, in_w = Unix.pipe ~cloexec:true () in
       let out_r, out_w = Unix.pipe ~cloexec:true () in
-      let err = Unix.openfile "/dev/null" [ Unix.O_WRONLY; Unix.O_CLOEXEC ] 0 in
+      let err =
+        Unix.openfile Host.null_device [ Unix.O_WRONLY; Unix.O_CLOEXEC ] 0
+      in
       try
         let argv =
           Process_tree.supervised_command ~acknowledge_tree:true ~supervisor

@@ -102,15 +102,24 @@ let make ~fs ~clock ~process_mgr ~repo_root ~(config : config) ~timeout_seconds
   let registry = Stdlib.Filename.concat common "onton-worktrees" in
   let checked_executables = Hashtbl.create (module String) in
   let resolve_executable name =
+    let names =
+      if Host.is_windows then
+        [ name ^ ".exe"; name ^ ".cmd"; name ^ ".bat"; name ]
+      else [ name ]
+    in
     let candidates =
-      if String.contains name '/' then [ name ]
+      if String.contains name '/' || String.contains name '\\' then [ name ]
       else
-        String.split (Option.value (Sys.getenv "PATH") ~default:"") ~on:':'
-        |> List.map ~f:(fun dir -> Stdlib.Filename.concat dir name)
+        String.split
+          (Option.value (Sys.getenv "PATH") ~default:"")
+          ~on:(if Host.is_windows then ';' else ':')
+        |> List.concat_map ~f:(fun dir ->
+            List.map names ~f:(fun candidate ->
+                Stdlib.Filename.concat dir candidate))
     in
     List.find_map candidates ~f:(fun path ->
         try
-          Unix.access path [ Unix.X_OK ];
+          if not Host.is_windows then Unix.access path [ Unix.X_OK ];
           if Stdlib.Sys.is_directory path then None else Some (canonical path)
         with Unix.Unix_error _ -> None)
   in

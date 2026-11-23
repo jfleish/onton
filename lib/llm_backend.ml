@@ -24,7 +24,11 @@ let spawn_and_stream ~process_mgr ~clock ~timeout ~cwd ~env ~setsid_exec ~args
         else path
     | None -> Process_tree.supervisor_path ()
   in
-  let args = Process_tree.supervised_command ~supervisor ~streaming:true args in
+  let args = Host.windows_command args in
+  let args =
+    if Host.is_windows then args
+    else Process_tree.supervised_command ~supervisor ~streaming:true args
+  in
   let exception Idle_timeout in
   (* Publish the deadline only once the child exists. Pipe setup and spawning
      are not child inactivity, and the watchdog must not cancel them. *)
@@ -99,13 +103,29 @@ let spawn_and_stream ~process_mgr ~clock ~timeout ~cwd ~env ~setsid_exec ~args
       Eio.Cancel.sub (fun caller ->
           Eio.Cancel.protect (fun () ->
               Eio.Switch.run (fun sw ->
-                  let stdin_r, stdin_w = Eio.Process.pipe ~sw process_mgr in
-                  let stdout_r, stdout_w = Eio.Process.pipe ~sw process_mgr in
-                  let stderr_r, stderr_w = Eio.Process.pipe ~sw process_mgr in
+                  let stdin_r, stdin_w =
+                    if Host.is_windows then
+                      Eio_unix.Net.socketpair_stream ~sw ()
+                    else Eio.Process.pipe ~sw process_mgr
+                  in
+                  let stdout_r, stdout_w =
+                    if Host.is_windows then
+                      Eio_unix.Net.socketpair_stream ~sw ()
+                    else Eio.Process.pipe ~sw process_mgr
+                  in
+                  let stderr_r, stderr_w =
+                    if Host.is_windows then
+                      Eio_unix.Net.socketpair_stream ~sw ()
+                    else Eio.Process.pipe ~sw process_mgr
+                  in
                   Eio.Cancel.check caller;
                   let child =
                     Eio.Process.spawn ~sw process_mgr ~cwd ~stdin:stdin_r
                       ~stdout:stdout_w ~stderr:stderr_w ~env args
+                  in
+                  let child_pid = Eio.Process.pid child in
+                  let job_attached =
+                    Host.is_windows && Host.attach_job child_pid
                   in
                   Eio.Promise.resolve idle_started_u
                     (ref (Eio.Time.now clock +. timeout));
@@ -118,11 +138,16 @@ let spawn_and_stream ~process_mgr ~clock ~timeout ~cwd ~env ~setsid_exec ~args
                   in
                   let await_child () = Eio.Promise.await_exn await_promise in
                   let signal_child signal =
-                    try Eio.Process.signal child signal with _ -> ()
+                    if Host.is_windows then ()
+                    else try Eio.Process.signal child signal with _ -> ()
                   in
                   let await_terminal_child () =
                     (* The supervisor owns both leader and helper flush windows. *)
-                    signal_child Stdlib.Sys.sigusr1;
+                    if Host.is_windows then (
+                      Eio.Time.sleep clock 0.2;
+                      if job_attached then Host.terminate_job child_pid
+                      else signal_child Stdlib.Sys.sigterm)
+                    else signal_child Stdlib.Sys.sigusr1;
                     await_child ()
                   in
                   (* The waiter and process resources live in a protected scope. A caller
@@ -130,8 +155,14 @@ let spawn_and_stream ~process_mgr ~clock ~timeout ~cwd ~env ~setsid_exec ~args
          releasing the checkout to another operation. *)
                   Exn.protect
                     ~finally:(fun () ->
-                      signal_child Stdlib.Sys.sigterm;
-                      ignore (await_child ()))
+                      if Host.is_windows then (
+                        if job_attached then Host.terminate_job child_pid;
+                        ignore (await_child ());
+                        if job_attached then Host.close_job child_pid)
+                      else (
+                        (try Eio.Process.signal child Stdlib.Sys.sigterm
+                         with _ -> ());
+                        ignore (await_child ())))
                     ~f:(fun () ->
                       Eio.Fiber.first
                         (fun () ->
@@ -219,6 +250,7 @@ let spawn_and_stream ~process_mgr ~clock ~timeout ~cwd ~env ~setsid_exec ~args
                                       saw_terminal_event_ref := true
                                     else read_lines ()
                                 | exception End_of_file -> ()
+                                | exception Eio.Exn.Io _ -> ()
                               in
                               read_lines ();
                               if !saw_terminal_event_ref then
@@ -296,7 +328,8 @@ let spawn_and_stream ~process_mgr ~clock ~timeout ~cwd ~env ~setsid_exec ~args
                           watch_caller ())))))
     in
     {
-      exit_code;
+      exit_code =
+        (if Host.is_windows && !saw_final_result_ref then 0 else exit_code);
       stdout = captured_stdout ();
       stderr = stderr_content;
       got_events = !got_events_ref;

@@ -15,6 +15,28 @@
 #include <caml/memory.h>
 #include <caml/fail.h>
 
+#ifdef _WIN32
+#include <windows.h>
+
+/* Windows has no RLIMIT_NOFILE. The CRT file-descriptor table is bounded but
+ * large enough for onton's workload; report a generous synthetic limit so the
+ * startup check does not reject the platform. */
+CAMLprim value caml_onton_getrlimit_nofile(value unit) {
+  CAMLparam1(unit);
+  CAMLlocal1(pair);
+  pair = caml_alloc_tuple(2);
+  Store_field(pair, 0, Val_long(8192));
+  Store_field(pair, 1, Val_long(8192));
+  CAMLreturn(pair);
+}
+
+CAMLprim value caml_onton_setrlimit_nofile_soft(value v_soft) {
+  CAMLparam1(v_soft);
+  (void)v_soft;
+  CAMLreturn(Val_unit);
+}
+#else
+
 #include <sys/resource.h>
 #include <errno.h>
 #include <string.h>
@@ -55,3 +77,5 @@ CAMLprim value caml_onton_setrlimit_nofile_soft(value v_soft) {
   }
   CAMLreturn(Val_unit);
 }
+
+#endif /* _WIN32 */

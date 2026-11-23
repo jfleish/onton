@@ -6,11 +6,8 @@ open Base
 type t = { on_worktree_create : string option }
 
 let config_dir ~github_owner ~github_repo =
-  let home = Stdlib.Sys.getenv "HOME" in
   Stdlib.Filename.concat
-    (Stdlib.Filename.concat
-       (Stdlib.Filename.concat home ".config/onton")
-       github_owner)
+    (Stdlib.Filename.concat (Host.config_dir ()) github_owner)
     github_repo
 
 let load ~github_owner ~github_repo =

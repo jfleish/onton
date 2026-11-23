@@ -15,12 +15,13 @@ let path_dirs getenv_opt =
   match getenv_opt "PATH" with
   | None | Some "" -> []
   | Some path ->
-      String.split path ~on:':'
+      String.split path ~on:(if Host.is_windows then ';' else ':')
       |> List.map ~f:(fun dir -> if String.is_empty dir then "." else dir)
 
 let is_executable_file path =
   try
     match (Unix.stat path).Unix.st_kind with
+    | Unix.S_REG when Host.is_windows -> true
     | Unix.S_REG ->
         Unix.access path [ Unix.X_OK ];
         true
@@ -31,13 +32,19 @@ let is_executable_file path =
 
 let find_executable ?(getenv_opt = Stdlib.Sys.getenv_opt)
     ?(is_executable = is_executable_file) command =
-  if String.contains command '/' then
+  if String.contains command '/' || String.contains command '\\' then
     if is_executable command then Some command else None
   else
+    let candidates =
+      if Host.is_windows then
+        [ command ^ ".exe"; command ^ ".cmd"; command ^ ".bat"; command ]
+      else [ command ]
+    in
     path_dirs getenv_opt
     |> List.find_map ~f:(fun dir ->
-        let path = Stdlib.Filename.concat dir command in
-        if is_executable path then Some path else None)
+        List.find_map candidates ~f:(fun candidate ->
+            let path = Stdlib.Filename.concat dir candidate in
+            if is_executable path then Some path else None))
 
 let check_backend ?getenv_opt ?is_executable backend =
   match command_for_backend backend with

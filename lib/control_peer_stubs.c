@@ -3,15 +3,18 @@
 #include <caml/mlvalues.h>
 #include <caml/memory.h>
 
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__linux__)
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+#endif
 
 /* Return -1 on any unsupported platform or credential lookup failure. The
  * control server treats that result as unauthorized. */
 CAMLprim value caml_onton_control_peer_uid(value v_fd) {
   CAMLparam1(v_fd);
   int fd = Int_val(v_fd);
+  (void)fd;
 #if defined(__APPLE__) || defined(__FreeBSD__)
   uid_t uid;
   gid_t gid;

@@ -151,6 +151,38 @@ jobs:
               print(f'::error file={f},line={line}::Test failed: {name}')
           "
 
+  windows-native:
+    name: Native Windows Build
+    runs-on: windows-2025
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      OCAML_COMPILER: '5.5.1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: ${{ env.OCAML_COMPILER }}
+          dune-cache: true
+      - name: Install dependencies
+        run: opam install . --deps-only --with-test -y
+      - name: Build native executables
+        run: opam exec -- dune build bin/main.exe bin/coordinator.exe bin/worker.exe bin/setsid_exec/main.exe
+      - name: Smoke test binaries
+        run: |
+          $bins = @(
+            '_build/default/bin/main.exe',
+            '_build/default/bin/coordinator.exe',
+            '_build/default/bin/worker.exe',
+            '_build/default/bin/setsid_exec/main.exe'
+          )
+          foreach ($bin in $bins) {
+            if (-not (Test-Path $bin)) { throw "Missing $bin" }
+          }
+          opam exec -- dune exec bin/main.exe -- --version
+          opam exec -- dune exec bin/setsid_exec/main.exe -- cmd.exe /c exit 0
+
   format:
     name: Format Check
     runs-on: blacksmith-4vcpu-ubuntu-2404

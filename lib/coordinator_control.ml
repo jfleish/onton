@@ -9,6 +9,9 @@ external peer_uid : Unix.file_descr -> int = "caml_onton_control_peer_uid"
 let authorized_peer flow =
   match Eio_unix.Resource.fd_opt flow with
   | None -> false
+  | Some _ when Host.is_windows ->
+      (* %LOCALAPPDATA% is per-user; Windows has no SO_PEERCRED. *)
+      true
   | Some fd ->
       Eio_unix.Fd.use fd
         ~if_closed:(fun () -> false)
@@ -36,12 +39,8 @@ let run ~net ~path ~submit () =
     invalid_arg "control socket path must be absolute";
   let parent = Stdlib.Filename.dirname path in
   (try Unix.mkdir parent 0o700 with Unix.Unix_error (Unix.EEXIST, _, _) -> ());
-  let stat = Unix.lstat parent in
-  if
-    (not (Poly.equal stat.Unix.st_kind Unix.S_DIR))
-    || stat.Unix.st_uid <> Unix.geteuid ()
-    || stat.Unix.st_perm land 0o077 <> 0
-  then invalid_arg "control socket parent must be owner-only";
+  if not (Host.owner_only_dir_ok parent) then
+    invalid_arg "control socket parent must be owner-only";
   let bound = ref false in
   Stdlib.Fun.protect
     ~finally:(fun () ->

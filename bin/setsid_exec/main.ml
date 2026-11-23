@@ -13,6 +13,16 @@ external leader_exited : int -> bool = "caml_onton_leader_exited"
 external descendants_remaining : int -> bool -> bool
   = "caml_onton_descendants_remaining"
 
+external win_attach_job : int -> bool = "caml_onton_win_attach_job"
+external win_terminate_job : unit -> unit = "caml_onton_win_terminate_job"
+external win_close_job : unit -> unit = "caml_onton_win_close_job"
+external win_signal_tree : unit -> unit = "caml_onton_win_signal_tree"
+
+external supervisor_parent_alive : int -> bool
+  = "caml_onton_supervisor_parent_alive"
+
+let is_windows = String.equal Sys.os_type "Win32"
+
 (* In supervised mode this single-threaded process owns the command's session.
    On Linux it also adopts orphaned descendants, so waiting for Git alone cannot
    leave filters behind. On macOS launchd reaps orphans; wait for the group to
@@ -158,6 +168,93 @@ let supervise ?parent ~streaming ~acknowledge_tree ~guards argv =
             exit 128)
       | Unix.WSTOPPED _ -> exit (if acknowledge_tree then 0 else 127))
 
+(* Windows process-tree supervision. Windows has no sessions or signalable
+   process groups; the child is owned by a Job Object (KILL_ON_JOB_CLOSE) so a
+   supervisor exit, including TerminateProcess from the parent, tears down the
+   whole tree. [win_*] stubs are in supervisor_stubs.c. *)
+let supervise_windows ?parent ~streaming ~acknowledge_tree ~guards argv =
+  let parent_alive () =
+    match parent with
+    | None -> true
+    | Some expected -> supervisor_parent_alive expected
+  in
+  if not (parent_alive ()) then (
+    prerr_endline "onton-setsid-exec: launching parent is no longer present";
+    exit 125);
+  let guard_fds =
+    try
+      List.map
+        (fun path ->
+          let fd =
+            Unix.openfile path
+              [ Unix.O_CREAT; Unix.O_RDWR; Unix.O_CLOEXEC ]
+              0o600
+          in
+          Unix.lockf fd Unix.F_TRLOCK 0;
+          fd)
+        guards
+    with exn ->
+      prerr_endline
+        ("onton-setsid-exec: command guard unavailable: "
+       ^ Printexc.to_string exn);
+      exit 125
+  in
+  if not (parent_alive ()) then (
+    prerr_endline
+      "onton-setsid-exec: launching parent disappeared before dispatch";
+    exit 125);
+  let child_pid =
+    Unix.create_process_env argv.(0) argv (Unix.environment ()) Unix.stdin
+      Unix.stdout Unix.stderr
+  in
+  ignore (win_attach_job child_pid);
+  List.iter Unix.close guard_fds;
+  let rec wait_child () =
+    try snd (Unix.waitpid [] child_pid)
+    with Unix.Unix_error (Unix.EINTR, _, _) -> wait_child ()
+  in
+  let status = wait_child () in
+  (* Give the tree a bounded window to drain. A streaming CLI gets a longer
+     window; otherwise terminate immediately. Ctrl+Break lets Git remove its
+     lock files before the job is torn down. *)
+  let ticks = ref (if streaming then 200 else 0) in
+  let rec await_descendants () =
+    if not (descendants_remaining 0 false) then ()
+    else (
+      if !ticks > 0 then decr ticks
+      else (
+        win_signal_tree ();
+        Unix.sleepf 0.25;
+        win_terminate_job ());
+      Unix.sleepf 0.01;
+      await_descendants ())
+  in
+  Stdlib.Fun.protect
+    ~finally:(fun () -> win_close_job ())
+    (fun () ->
+      await_descendants ();
+      let code =
+        match status with
+        | Unix.WEXITED code -> code
+        | Unix.WSIGNALED signal -> 128 + signal
+        | Unix.WSTOPPED _ -> 127
+      in
+      exit (if acknowledge_tree then 0 else code))
+
+let exec_or_proxy argv =
+  let env = Unix.environment () in
+  let pid =
+    Unix.create_process_env argv.(0) argv env Unix.stdin Unix.stdout Unix.stderr
+  in
+  let rec wait () =
+    try snd (Unix.waitpid [] pid)
+    with Unix.Unix_error (Unix.EINTR, _, _) -> wait ()
+  in
+  match wait () with
+  | Unix.WEXITED code -> exit code
+  | Unix.WSIGNALED signal -> exit (128 + signal)
+  | Unix.WSTOPPED _ -> exit 127
+
 let () =
   let attach =
     Array.length Sys.argv > 1 && Sys.argv.(1) = "--supervise-attach-parent"
@@ -210,10 +307,15 @@ let () =
     prerr_endline "onton-setsid-exec: missing program to exec";
     exit 2);
   let argv = Array.sub Sys.argv first (Array.length Sys.argv - first) in
-  if supervised then
-    supervise ?parent ~streaming ~acknowledge_tree:attach ~guards argv;
-  (try ignore (Unix.setsid () : int)
-   with Unix.Unix_error _ ->
-     (* Already a session leader: harmless, proceed. *)
-     ());
-  Unix.execvp argv.(0) argv
+  if is_windows then
+    if supervised then
+      supervise_windows ?parent ~streaming ~acknowledge_tree:attach ~guards argv
+    else exec_or_proxy argv
+  else (
+    if supervised then
+      supervise ?parent ~streaming ~acknowledge_tree:attach ~guards argv;
+    (try ignore (Unix.setsid () : int)
+     with Unix.Unix_error _ ->
+       (* Already a session leader: harmless, proceed. *)
+       ());
+    Unix.execvp argv.(0) argv)

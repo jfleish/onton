@@ -65,7 +65,7 @@ let run_git ~cwd args =
   let env = clean_env () in
   let stderr_r, stderr_w = Unix.pipe ~cloexec:true () in
   let devnull =
-    match Unix.openfile "/dev/null" [ Unix.O_RDWR ] 0 with
+    match Unix.openfile Onton.Host.null_device [ Unix.O_RDWR ] 0 with
     | fd -> fd
     | exception exn ->
         (try Unix.close stderr_r with _ -> ());
@@ -120,7 +120,7 @@ let git_capture ~cwd args =
   let stdout_r, stdout_w = Unix.pipe ~cloexec:true () in
   let stderr_r, stderr_w = Unix.pipe ~cloexec:true () in
   let devnull =
-    match Unix.openfile "/dev/null" [ Unix.O_RDONLY ] 0 with
+    match Unix.openfile Onton.Host.null_device [ Unix.O_RDONLY ] 0 with
     | fd -> fd
     | exception exn ->
         List.iter
@@ -177,9 +177,9 @@ let git_capture ~cwd args =
 let git_exit_code ~cwd args =
   let argv = Array.of_list ("git" :: "-C" :: cwd :: args) in
   let env = clean_env () in
-  let devnull_in = Unix.openfile "/dev/null" [ Unix.O_RDONLY ] 0 in
+  let devnull_in = Unix.openfile Onton.Host.null_device [ Unix.O_RDONLY ] 0 in
   let devnull_out =
-    match Unix.openfile "/dev/null" [ Unix.O_WRONLY ] 0 with
+    match Unix.openfile Onton.Host.null_device [ Unix.O_WRONLY ] 0 with
     | fd -> fd
     | exception exn ->
         (try Unix.close devnull_in with _ -> ());
@@ -215,7 +215,7 @@ let sh ~dir cmd =
   let full = Printf.sprintf "cd %s && %s" (Stdlib.Filename.quote dir) cmd in
   let argv = [| "/bin/sh"; "-c"; full |] in
   let env = clean_env () in
-  let devnull = Unix.openfile "/dev/null" [ Unix.O_RDONLY ] 0 in
+  let devnull = Unix.openfile Onton.Host.null_device [ Unix.O_RDONLY ] 0 in
   let pid =
     Stdlib.Fun.protect
       ~finally:(fun () -> try Unix.close devnull with _ -> ())
@@ -243,9 +243,18 @@ let init_repo dir =
   run_git ~cwd:dir [ "config"; "rerere.enabled"; "false" ];
   run_git ~cwd:dir [ "config"; "rerere.autoupdate"; "false" ]
 
-let rm_rf dir =
-  let cmd = Printf.sprintf "rm -rf %s" (Stdlib.Filename.quote dir) in
-  ignore (Stdlib.Sys.command cmd : int)
+let rec rm_rf path =
+  match Unix.lstat path with
+  | exception Unix.Unix_error (Unix.ENOENT, _, _) -> ()
+  | stat -> (
+      match stat.Unix.st_kind with
+      | Unix.S_DIR ->
+          Stdlib.Sys.readdir path
+          |> Array.iter ~f:(fun child ->
+                 rm_rf (Stdlib.Filename.concat path child));
+          Unix.rmdir path
+      | Unix.S_REG | Unix.S_CHR | Unix.S_BLK | Unix.S_LNK | Unix.S_FIFO
+      | Unix.S_SOCK -> Unix.unlink path)
 
 let with_temp_repo f =
   let dir = Stdlib.Filename.temp_dir "onton-test-repo-" "" in

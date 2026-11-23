@@ -19,12 +19,10 @@ let normalize_path path =
   Worktree_parser.normalize_path ~cwd:(Stdlib.Sys.getcwd ()) path
 
 let worktree_dir ~project_name ~patch_id =
-  let home =
-    match Stdlib.Sys.getenv_opt "HOME" with Some h -> h | None -> "."
-  in
+  let home = Host.home_dir_or_cwd () in
   let id_str = Types.Patch_id.to_string patch_id in
   Stdlib.Filename.concat
-    (Stdlib.Filename.concat home ("worktrees/" ^ project_name))
+    (Stdlib.Filename.concat home (Stdlib.Filename.concat "worktrees" project_name))
     ("patch-" ^ id_str)
 
 let has_cancellation = Process_tree.has_cancellation

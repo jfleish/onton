@@ -114,9 +114,43 @@ jobs:
           name: onton-${{ matrix.target }}
           path: onton-${{ matrix.target }}.tar.gz
 
+  windows:
+    name: Build (x86_64-pc-windows-msvc)
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ocaml/setup-ocaml@v3
+        with:
+          ocaml-compiler: '5.5.1'
+          dune-cache: true
+      - name: Install dependencies
+        run: opam install . --deps-only --with-test -y
+      - name: Build and package
+        shell: pwsh
+        run: |
+          $version = $env:GITHUB_REF_NAME
+          $path = 'bin/version.ml'
+          $text = Get-Content $path -Raw
+          $text = [regex]::Replace($text, 'let s = .*', ('let s = "' + $version + '"'))
+          Set-Content -Path $path -Value $text -NoNewline
+          opam exec -- dune build bin/main.exe bin/coordinator.exe bin/worker.exe bin/setsid_exec/main.exe
+          New-Item -ItemType Directory -Force -Path _dist/bin/share/onton/pi-onton | Out-Null
+          Copy-Item _build/default/bin/main.exe _dist/bin/onton.exe
+          Copy-Item _build/default/bin/worker.exe _dist/bin/onton-worker.exe
+          Copy-Item _build/default/bin/coordinator.exe _dist/bin/onton-coordinator.exe
+          Copy-Item _build/default/bin/setsid_exec/main.exe _dist/bin/onton-setsid-exec.exe
+          Copy-Item pi-onton/src/index.ts,pi-onton/src/protocol.ts,pi-onton/src/files.ts _dist/bin/share/onton/pi-onton/
+          if ((opam exec -- dune exec bin/main.exe -- --version) -ne $version) { throw 'Version smoke test failed' }
+          opam exec -- dune exec bin/setsid_exec/main.exe -- cmd.exe /c exit 0
+          Compress-Archive -Path _dist/bin/* -DestinationPath ('onton-x86_64-pc-windows-msvc.zip')
+      - uses: actions/upload-artifact@v4
+        with:
+          name: onton-x86_64-pc-windows-msvc
+          path: onton-x86_64-pc-windows-msvc.zip
+
   release:
     name: Create Release
-    needs: build
+    needs: [build, windows]
     runs-on: blacksmith-4vcpu-ubuntu-2404
     steps:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
@@ -133,7 +167,8 @@ jobs:
             --generate-notes \
             onton-arm64-apple-darwin.tar.gz \
             onton-x86_64-unknown-linux-gnu.tar.gz \
-            onton-aarch64-unknown-linux-gnu.tar.gz
+            onton-aarch64-unknown-linux-gnu.tar.gz \
+            onton-x86_64-pc-windows-msvc.zip
 
   homebrew:
     name: Update Homebrew Formula

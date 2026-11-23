@@ -338,46 +338,50 @@ let () =
      same process group. The child outlives its initial grace and receives
      TERM, while its helper needs another 0.5s to finish and report success. *)
   let helper_flush_grace_test () =
-    match Stdlib.Sys.getenv_opt "ONTON_SETSID_EXEC" with
-    | None | Some "" ->
-        Stdio.printf
-          "helper flush grace: SKIPPED (ONTON_SETSID_EXEC not set — dune run \
-           only)\n"
-    | Some shim ->
-        let payload =
-          {|{"type":"result","result":"done","stop_reason":"end_turn"}|}
-        in
-        let script =
-          Printf.sprintf
-            "(sleep 2.5; printf 'helper-flushed\\n' >&2; sleep 0.1) & printf \
-             '%s\\n'; exec sleep 30"
-            payload
-        in
-        let started = Eio.Time.now clock in
-        let result =
-          Llm_backend.spawn_and_stream ~process_mgr ~clock ~timeout:30.0 ~cwd
-            ~env:(Unix.environment ()) ~setsid_exec:(Some shim)
-            ~args:[ "sh"; "-c"; script ] ~session_uuid:None
-            ~patch_id:(Types.Patch_id.of_string "smoke")
-            ~process_line:process_line_claude ~on_event:(fun _ -> ())
-        in
-        let elapsed = Eio.Time.now clock -. started in
-        if Float.(elapsed > 5.0) then (
-          Stdio.printf "FAIL: helper flush grace took %.2fs (expected < 5s)\n"
-            elapsed;
-          Int.incr failures)
-        else if not result.Llm_backend.saw_final_result then (
-          Stdio.printf "FAIL: helper flush grace: Final_result not seen\n";
-          Int.incr failures)
-        else if
-          not
-            (String.is_substring result.Llm_backend.stderr
-               ~substring:"helper-flushed")
-        then (
+    if Host.is_windows then
+      Stdio.printf
+        "helper flush grace: SKIPPED (Windows uses direct Eio Job Objects)\n"
+    else
+      match Stdlib.Sys.getenv_opt "ONTON_SETSID_EXEC" with
+      | None | Some "" ->
           Stdio.printf
-            "FAIL: helper flush grace: persistence helper was interrupted\n";
-          Int.incr failures)
-        else Stdio.printf "helper flush grace: passed (%.2fs)\n" elapsed
+            "helper flush grace: SKIPPED (ONTON_SETSID_EXEC not set — dune run \
+             only)\n"
+      | Some shim ->
+          let payload =
+            {|{"type":"result","result":"done","stop_reason":"end_turn"}|}
+          in
+          let script =
+            Printf.sprintf
+              "(sleep 2.5; printf 'helper-flushed\\n' >&2; sleep 0.1) & printf \
+               '%s\\n'; exec sleep 30"
+              payload
+          in
+          let started = Eio.Time.now clock in
+          let result =
+            Llm_backend.spawn_and_stream ~process_mgr ~clock ~timeout:30.0 ~cwd
+              ~env:(Unix.environment ()) ~setsid_exec:(Some shim)
+              ~args:[ "sh"; "-c"; script ] ~session_uuid:None
+              ~patch_id:(Types.Patch_id.of_string "smoke")
+              ~process_line:process_line_claude ~on_event:(fun _ -> ())
+          in
+          let elapsed = Eio.Time.now clock -. started in
+          if Float.(elapsed > 5.0) then (
+            Stdio.printf "FAIL: helper flush grace took %.2fs (expected < 5s)\n"
+              elapsed;
+            Int.incr failures)
+          else if not result.Llm_backend.saw_final_result then (
+            Stdio.printf "FAIL: helper flush grace: Final_result not seen\n";
+            Int.incr failures)
+          else if
+            not
+              (String.is_substring result.Llm_backend.stderr
+                 ~substring:"helper-flushed")
+          then (
+            Stdio.printf
+              "FAIL: helper flush grace: persistence helper was interrupted\n";
+            Int.incr failures)
+          else Stdio.printf "helper flush grace: passed (%.2fs)\n" elapsed
   in
   helper_flush_grace_test ();
   (* --- Timeout regression: a subprocess that never emits Final_result
@@ -412,77 +416,83 @@ let () =
      The subprocess embeds its grandchild's pid in a text_delta so we can probe
      for it after spawn_and_stream returns. *)
   let grandchild_reap_test () =
-    match Stdlib.Sys.getenv_opt "ONTON_SETSID_EXEC" with
-    | None | Some "" ->
-        Stdio.printf
-          "grandchild reap: SKIPPED (ONTON_SETSID_EXEC not set — dune run only)\n"
-    | Some shim -> (
-        let grand_pid_ref = ref None in
-        let on_event ev =
-          match ev with
-          | Types.Stream_event.Text_delta t -> (
-              match String.chop_prefix t ~prefix:"GRAND:" with
-              | Some s -> (
-                  match Int.of_string_opt (String.strip s) with
-                  | Some pid -> grand_pid_ref := Some pid
-                  | None -> ())
-              | None -> ())
-          | Types.Stream_event.Tool_use _ | Types.Stream_event.Final_result _
-          | Types.Stream_event.Error _ | Types.Stream_event.Session_init _
-          | Types.Stream_event.Turn_started ->
-              ()
-        in
-        let script =
-          {|sleep 30 &
+    if Host.is_windows then
+      Stdio.printf
+        "grandchild reap: SKIPPED (Windows Job Object coverage is native-only)\n"
+    else
+      match Stdlib.Sys.getenv_opt "ONTON_SETSID_EXEC" with
+      | None | Some "" ->
+          Stdio.printf
+            "grandchild reap: SKIPPED (ONTON_SETSID_EXEC not set — dune run \
+             only)\n"
+      | Some shim -> (
+          let grand_pid_ref = ref None in
+          let on_event ev =
+            match ev with
+            | Types.Stream_event.Text_delta t -> (
+                match String.chop_prefix t ~prefix:"GRAND:" with
+                | Some s -> (
+                    match Int.of_string_opt (String.strip s) with
+                    | Some pid -> grand_pid_ref := Some pid
+                    | None -> ())
+                | None -> ())
+            | Types.Stream_event.Tool_use _ | Types.Stream_event.Final_result _
+            | Types.Stream_event.Error _ | Types.Stream_event.Session_init _
+            | Types.Stream_event.Turn_started ->
+                ()
+          in
+          let script =
+            {|sleep 30 &
 GRAND=$!
 printf '{"type":"content_block_delta","delta":{"type":"text_delta","text":"GRAND:%d"}}\n' "$GRAND"
 printf '{"type":"result","result":"done","stop_reason":"end_turn"}\n'
 # Don't wait — exit immediately so sleep is orphaned unless the shim's
 # setsid lets the parent's SIGKILL sweep it up.
 exit 0|}
-        in
-        let args = [ "sh"; "-c"; script ] in
-        let started = Unix.gettimeofday () in
-        let result =
-          Llm_backend.spawn_and_stream ~process_mgr ~clock ~timeout:30.0 ~cwd
-            ~env:(Unix.environment ()) ~setsid_exec:(Some shim) ~args
-            ~session_uuid:None
-            ~patch_id:(Types.Patch_id.of_string "smoke")
-            ~process_line:process_line_claude ~on_event
-        in
-        let elapsed = Unix.gettimeofday () -. started in
-        if Float.(elapsed > 5.0) then (
-          Stdio.printf
-            "FAIL: grandchild reap: took %.2fs (expected < 5s; descendant \
-             likely held a pipe open)\n"
-            elapsed;
-          Int.incr failures)
-        else if not result.Llm_backend.saw_final_result then (
-          Stdio.printf "FAIL: grandchild reap: Final_result not seen\n";
-          Int.incr failures)
-        else
-          match !grand_pid_ref with
-          | None ->
-              Stdio.printf
-                "FAIL: grandchild reap: grandchild pid not captured\n";
-              Int.incr failures
-          | Some pid ->
-              (* Give the kernel a beat to deliver SIGKILL and reap. *)
-              Unix.sleepf 0.2;
-              let alive =
-                try
-                  Unix.kill pid 0;
-                  true
-                with Unix.Unix_error (Unix.ESRCH, _, _) -> false
-              in
-              if alive then (
+          in
+          let args = [ "sh"; "-c"; script ] in
+          let started = Unix.gettimeofday () in
+          let result =
+            Llm_backend.spawn_and_stream ~process_mgr ~clock ~timeout:30.0 ~cwd
+              ~env:(Unix.environment ()) ~setsid_exec:(Some shim) ~args
+              ~session_uuid:None
+              ~patch_id:(Types.Patch_id.of_string "smoke")
+              ~process_line:process_line_claude ~on_event
+          in
+          let elapsed = Unix.gettimeofday () -. started in
+          if Float.(elapsed > 5.0) then (
+            Stdio.printf
+              "FAIL: grandchild reap: took %.2fs (expected < 5s; descendant \
+               likely held a pipe open)\n"
+              elapsed;
+            Int.incr failures)
+          else if not result.Llm_backend.saw_final_result then (
+            Stdio.printf "FAIL: grandchild reap: Final_result not seen\n";
+            Int.incr failures)
+          else
+            match !grand_pid_ref with
+            | None ->
                 Stdio.printf
-                  "FAIL: grandchild reap: pid %d still alive after \
-                   spawn_and_stream returned\n"
-                  pid;
-                (try Unix.kill pid Stdlib.Sys.sigkill with _ -> ());
-                Int.incr failures)
-              else Stdio.printf "grandchild reap: passed (pid %d reaped)\n" pid)
+                  "FAIL: grandchild reap: grandchild pid not captured\n";
+                Int.incr failures
+            | Some pid ->
+                (* Give the kernel a beat to deliver SIGKILL and reap. *)
+                Unix.sleepf 0.2;
+                let alive =
+                  try
+                    Unix.kill pid 0;
+                    true
+                  with Unix.Unix_error (Unix.ESRCH, _, _) -> false
+                in
+                if alive then (
+                  Stdio.printf
+                    "FAIL: grandchild reap: pid %d still alive after \
+                     spawn_and_stream returned\n"
+                    pid;
+                  (try Unix.kill pid Stdlib.Sys.sigkill with _ -> ());
+                  Int.incr failures)
+                else
+                  Stdio.printf "grandchild reap: passed (pid %d reaped)\n" pid)
   in
   grandchild_reap_test ();
   if !failures > 0 then (

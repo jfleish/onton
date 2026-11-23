@@ -48,12 +48,12 @@ let supervisor_path () =
         let sibling =
           Stdlib.Filename.concat
             (Stdlib.Filename.dirname Stdlib.Sys.executable_name)
-            "onton-setsid-exec"
+            (Host.exe "onton-setsid-exec")
         in
         if Stdlib.Sys.file_exists sibling then sibling
         else
           Option.value
-            (Backend_preflight.find_executable "onton-setsid-exec")
+            (Backend_preflight.find_executable (Host.exe "onton-setsid-exec"))
             ~default:sibling
   in
   if
@@ -120,8 +120,10 @@ let run_sync ?(timeout = 120.) ~env args =
          child still anchors its PID; ECHILD forbids signaling a recycled PID. *)
       match wait [ Unix.WNOHANG ] pid with
       | 0, _ ->
-          (try Unix.kill pid Stdlib.Sys.sigterm
-           with Unix.Unix_error (Unix.ESRCH, _, _) -> ());
+          (if Host.is_windows then Host.stop_process pid
+           else
+             try Unix.kill pid Stdlib.Sys.sigterm
+             with Unix.Unix_error (Unix.ESRCH, _, _) -> ());
           ignore (wait [] pid)
       | _, _ -> ()
       | exception Unix.Unix_error (Unix.ECHILD, _, _) -> ()
@@ -134,7 +136,8 @@ let run_sync ?(timeout = 120.) ~env args =
           (fun () -> Option.iter !child ~f:stop))
       (fun () ->
         let stdin =
-          own (Unix.openfile "/dev/null" [ Unix.O_RDONLY; Unix.O_CLOEXEC ] 0)
+          own
+            (Unix.openfile Host.null_device [ Unix.O_RDONLY; Unix.O_CLOEXEC ] 0)
         in
         let out_r, out_w = pipe () and err_r, err_w = pipe () in
         let argv =
@@ -194,7 +197,7 @@ let run_sync ?(timeout = 120.) ~env args =
         in
         (status, Buffer.contents stdout, Buffer.contents stderr))
 
-let run_status ?cwd ?stdout ?stderr ~process_mgr ?clock ~env args =
+let run_status_windows ?cwd ?stdout ?stderr ~process_mgr ?clock ~env args =
   let sleep =
     match clock with
     | Some clock -> Eio.Time.sleep clock
@@ -202,50 +205,131 @@ let run_status ?cwd ?stdout ?stderr ~process_mgr ?clock ~env args =
   in
   let stdout = Option.value stdout ~default:(Buffer.create 256) in
   let stderr = Option.value stderr ~default:(Buffer.create 256) in
-  let supervisor = supervisor_path () in
-  if String.is_empty supervisor || not (Stdlib.Sys.file_exists supervisor) then (
-    Buffer.add_string stderr
-      ("Process-tree supervisor unavailable: " ^ supervisor);
-    (`Exited 127, Buffer.contents stdout, Buffer.contents stderr))
+  Eio.Cancel.sub (fun caller ->
+      Eio.Cancel.protect (fun () ->
+          Eio.Switch.run (fun sw ->
+              let stdin_r, stdin_w = Eio_unix.Net.socketpair_stream ~sw () in
+              let stdout_r, stdout_w = Eio_unix.Net.socketpair_stream ~sw () in
+              let stderr_r, stderr_w = Eio_unix.Net.socketpair_stream ~sw () in
+              Eio.Cancel.check caller;
+              let child =
+                retry_transient_spawn (fun () ->
+                    Eio.Cancel.check caller;
+                    Eio.Process.spawn ~sw process_mgr ~env ?cwd ~stdin:stdin_r
+                      ~stdout:stdout_w ~stderr:stderr_w args)
+              in
+              let child_pid = Eio.Process.pid child in
+              let job_attached = Host.attach_job child_pid in
+              Eio.Flow.close stdin_r;
+              Eio.Flow.close stdout_w;
+              Eio.Flow.close stderr_w;
+              Eio.Flow.close stdin_w;
+              let read_flow flow buffer =
+                let bytes = Bytes.create 8192 in
+                let rec loop () =
+                  try
+                    let n =
+                      Eio.Flow.single_read flow (Cstruct.of_bytes bytes)
+                    in
+                    if n > 0 then (
+                      Buffer.add_subbytes buffer bytes ~pos:0 ~len:n;
+                      loop ())
+                  with End_of_file | Eio.Exn.Io _ -> ()
+                in
+                loop ()
+              in
+              let waited =
+                Eio.Fiber.fork_promise ~sw (fun () -> Eio.Process.await child)
+              in
+              let drained =
+                Eio.Fiber.fork_promise ~sw (fun () ->
+                    Eio.Fiber.both
+                      (fun () -> read_flow stdout_r stdout)
+                      (fun () -> read_flow stderr_r stderr))
+              in
+              Stdlib.Fun.protect
+                ~finally:(fun () ->
+                  Eio.Cancel.protect (fun () ->
+                      if job_attached then Host.terminate_job child_pid
+                      else Host.stop_process child_pid;
+                      ignore (Eio.Promise.await_exn waited);
+                      if job_attached then Host.close_job child_pid);
+                  ignore (Eio.Promise.await_exn drained))
+                (fun () ->
+                  let status =
+                    Eio.Fiber.first
+                      (fun () -> Eio.Promise.await_exn waited)
+                      (fun () ->
+                        let rec watch () =
+                          Eio.Cancel.check caller;
+                          sleep 0.01;
+                          watch ()
+                        in
+                        watch ())
+                  in
+                  ignore (Eio.Promise.await_exn drained);
+                  (status, Buffer.contents stdout, Buffer.contents stderr)))))
+
+let run_status ?cwd ?stdout ?stderr ~process_mgr ?clock ~env args =
+  if Host.is_windows then
+    run_status_windows ?cwd ?stdout ?stderr ~process_mgr ?clock ~env args
   else
-    let status =
-      Eio.Cancel.sub (fun caller ->
-          (* Own the supervisor and its waiter together. Only the command wait
+    let sleep =
+      match clock with
+      | Some clock -> Eio.Time.sleep clock
+      | None -> Eio_unix.sleep
+    in
+    let stdout = Option.value stdout ~default:(Buffer.create 256) in
+    let stderr = Option.value stderr ~default:(Buffer.create 256) in
+    let supervisor = supervisor_path () in
+    if String.is_empty supervisor || not (Stdlib.Sys.file_exists supervisor)
+    then (
+      Buffer.add_string stderr
+        ("Process-tree supervisor unavailable: " ^ supervisor);
+      (`Exited 127, Buffer.contents stdout, Buffer.contents stderr))
+    else
+      let status =
+        Eio.Cancel.sub (fun caller ->
+            (* Own the supervisor and its waiter together. Only the command wait
              is cancellable: check caller cancellation every 10ms, then wait for
              the supervisor to reap its tree before releasing resources. *)
-          Eio.Cancel.protect (fun () ->
-              Eio.Switch.run (fun sw ->
-                  let child =
-                    retry_transient_spawn (fun () ->
-                        Eio.Cancel.check caller;
-                        Eio.Process.spawn ~sw process_mgr ~env ?cwd
-                          ~stdin:(Eio.Flow.string_source "")
-                          ~stdout:(Eio.Flow.buffer_sink stdout)
-                          ~stderr:(Eio.Flow.buffer_sink stderr)
-                          (supervised_command ~supervisor ~streaming:false args))
-                  in
-                  let waited =
-                    Eio.Fiber.fork_promise ~sw (fun () ->
-                        Eio.Process.await child)
-                  in
-                  Stdlib.Fun.protect
-                    ~finally:(fun () ->
-                      Eio.Cancel.protect (fun () ->
-                          (try Eio.Process.signal child Stdlib.Sys.sigterm
-                           with Unix.Unix_error (Unix.ESRCH, _, _) -> ());
-                          ignore (Eio.Promise.await_exn waited)))
-                    (fun () ->
-                      Eio.Fiber.first
-                        (fun () -> Eio.Promise.await_exn waited)
-                        (fun () ->
-                          let rec watch () =
-                            Eio.Cancel.check caller;
-                            sleep 0.01;
-                            watch ()
-                          in
-                          watch ())))))
-    in
-    (status, Buffer.contents stdout, Buffer.contents stderr)
+            Eio.Cancel.protect (fun () ->
+                Eio.Switch.run (fun sw ->
+                    let child =
+                      retry_transient_spawn (fun () ->
+                          Eio.Cancel.check caller;
+                          Eio.Process.spawn ~sw process_mgr ~env ?cwd
+                            ~stdin:(Eio.Flow.string_source "")
+                            ~stdout:(Eio.Flow.buffer_sink stdout)
+                            ~stderr:(Eio.Flow.buffer_sink stderr)
+                            (supervised_command ~supervisor ~streaming:false
+                               args))
+                    in
+                    let waited =
+                      Eio.Fiber.fork_promise ~sw (fun () ->
+                          Eio.Process.await child)
+                    in
+                    Stdlib.Fun.protect
+                      ~finally:(fun () ->
+                        Eio.Cancel.protect (fun () ->
+                            (if Host.is_windows then
+                               Host.stop_process (Eio.Process.pid child)
+                             else
+                               try Eio.Process.signal child Stdlib.Sys.sigterm
+                               with Unix.Unix_error (Unix.ESRCH, _, _) -> ());
+                            ignore (Eio.Promise.await_exn waited)))
+                      (fun () ->
+                        Eio.Fiber.first
+                          (fun () -> Eio.Promise.await_exn waited)
+                          (fun () ->
+                            let rec watch () =
+                              Eio.Cancel.check caller;
+                              sleep 0.01;
+                              watch ()
+                            in
+                            watch ())))))
+      in
+      (status, Buffer.contents stdout, Buffer.contents stderr)
 
 let run ?cwd ?stdout ?stderr ~process_mgr ?clock ~env args =
   let status, stdout, stderr =

@@ -892,7 +892,10 @@ let setup_runtime env ~config ~gameplan ~existing_snapshot =
       (Sys.Signal_handle
          (fun _ ->
            Printf.eprintf "\nInterrupted.\n%!";
-           (try Unix.kill 0 Sys.sigterm with Unix.Unix_error _ -> ());
+           (* Windows has no process-group signal; exiting closes the Job
+              Object handles that own the agent trees. *)
+           (if not Host.is_windows then
+              try Unix.kill 0 Sys.sigterm with _ -> ());
            Stdlib.exit 130));
   let runtime =
     match existing_snapshot with

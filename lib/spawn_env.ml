@@ -9,6 +9,24 @@ let patch_root ~project_dir ~patch_id =
 
 let backend_dir ~root ~backend = Stdlib.Filename.concat root backend
 
+let copy_file ~src ~dst =
+  let ic = Stdlib.open_in_bin src in
+  Stdlib.Fun.protect
+    ~finally:(fun () -> Stdlib.close_in_noerr ic)
+    (fun () ->
+      let oc = Stdlib.open_out_bin dst in
+      Stdlib.Fun.protect
+        ~finally:(fun () -> Stdlib.close_out_noerr oc)
+        (fun () ->
+          let buf = Stdlib.Bytes.create 8192 in
+          let rec loop () =
+            let n = Stdlib.input ic buf 0 (Stdlib.Bytes.length buf) in
+            if n > 0 then (
+              Stdlib.output oc buf 0 n;
+              loop ())
+          in
+          loop ()))
+
 (* Idempotently symlink [src] at [dst]. Skip if [dst] already exists in any
    form (regular file, dir, or existing symlink): the backend CLI may have
    replaced the symlink with a freshly-written file (e.g. atomic-rename token
@@ -27,7 +45,21 @@ let seed_link ~src ~dst =
     | exception Unix.Unix_error (Unix.ENOENT, _, _) -> false
   in
   if (not dst_exists) && src_exists then
-    try Unix.symlink src dst with Unix.Unix_error (Unix.EEXIST, _, _) -> ()
+    match Unix.symlink src dst with
+    | () -> ()
+    | exception Unix.Unix_error (Unix.EEXIST, _, _) -> ()
+    | exception Unix.Unix_error _ ->
+        (* Windows only permits symlink creation in Developer Mode or from an
+           elevated shell. A hard link keeps the same live-file semantics (the
+           backend CLI may atomically replace the source); fall back to a copy
+           when the source lives on another volume. *)
+        (try Unix.link src dst with
+        | Unix.Unix_error (Unix.EEXIST, _, _) -> ()
+        | Unix.Unix_error _ -> (
+            try copy_file ~src ~dst with e ->
+              Stdlib.Printf.eprintf
+                "onton: could not seed auth file %s: %s\n%!" dst
+                (Exn.to_string e)))
 
 let resolve_user_config_dir ~env_var ~home_subpath =
   let absolutize path =
@@ -38,10 +70,9 @@ let resolve_user_config_dir ~env_var ~home_subpath =
   match Stdlib.Sys.getenv_opt env_var with
   | Some dir when not (String.is_empty dir) -> Some (absolutize dir)
   | _ -> (
-      match Stdlib.Sys.getenv_opt "HOME" with
-      | Some home when not (String.is_empty home) ->
-          Some (Stdlib.Filename.concat (absolutize home) home_subpath)
-      | _ -> None)
+      match Host.home_dir () with
+      | Some home -> Some (Stdlib.Filename.concat (absolutize home) home_subpath)
+      | None -> None)
 
 (* On macOS, Claude Code stores its OAuth token in the macOS Keychain rather
    than in [.credentials.json]. The Keychain lookup is scoped such that
@@ -84,9 +115,21 @@ let read_token_file_opt path =
         Some (Stdlib.Bytes.to_string buf))
   with _ -> None
 
+let read_config_claude_token ~config_dir =
+  let path = Stdlib.Filename.concat config_dir "claude-oauth-token" in
+  match read_token_file_opt path with
+  | None -> None
+  | Some s ->
+      let t = String.strip s in
+      if String.is_empty t then None else Some t
+
 let resolve_claude_oauth_token () =
-  resolve_claude_oauth_token_with ~getenv_opt:Stdlib.Sys.getenv_opt
-    ~read_token_file:read_token_file_opt
+  match
+    resolve_claude_oauth_token_with ~getenv_opt:Stdlib.Sys.getenv_opt
+      ~read_token_file:read_token_file_opt
+  with
+  | Some _ as token -> token
+  | None -> read_config_claude_token ~config_dir:(Host.config_dir ())
 
 let claude_oauth_token_overrides () =
   match resolve_claude_oauth_token () with

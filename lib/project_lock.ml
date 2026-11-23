@@ -23,16 +23,7 @@ let read_pid fd =
     - ok → process exists and we could signal it
     - [EPERM] → exists, different user: still counts as alive
     - [ESRCH] → does not exist → stale *)
-let pid_alive pid =
-  if pid <= 0 then false
-  else
-    try
-      Unix.kill pid 0;
-      true
-    with
-    | Unix.Unix_error (Unix.ESRCH, _, _) -> false
-    | Unix.Unix_error (Unix.EPERM, _, _) -> true
-    | _ -> false
+let pid_alive pid = if pid <= 0 then false else Host.process_alive pid
 
 let write_self_pid fd =
   try

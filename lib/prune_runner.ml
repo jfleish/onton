@@ -216,10 +216,8 @@ let classify_project ~make_forge ~refresh ~slug =
         (status, refresh_summary)
 
 let worktree_root_for ~project_name =
-  let home =
-    match Stdlib.Sys.getenv_opt "HOME" with Some h -> h | None -> "."
-  in
-  Stdlib.Filename.concat home (Stdlib.Filename.concat "worktrees" project_name)
+  Stdlib.Filename.concat (Host.home_dir_or_cwd ())
+    (Stdlib.Filename.concat "worktrees" project_name)
 
 (** Stored config records the gameplan-provided [project_name] verbatim, which
     is what worktrees are keyed by under [~/worktrees/]. The data dir is keyed
