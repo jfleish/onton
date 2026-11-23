@@ -205,6 +205,7 @@ let run_status_windows ?cwd ?stdout ?stderr ~process_mgr ?clock ~env args =
   in
   let stdout = Option.value stdout ~default:(Buffer.create 256) in
   let stderr = Option.value stderr ~default:(Buffer.create 256) in
+  let args = Host.windows_command args in
   Eio.Cancel.sub (fun caller ->
       Eio.Cancel.protect (fun () ->
           Eio.Switch.run (fun sw ->

@@ -213,14 +213,14 @@ let git_exit_code ~cwd args =
    the command invokes. stdout/stderr pass through; raises on nonzero exit. *)
 let sh ~dir cmd =
   let full = Printf.sprintf "cd %s && %s" (Stdlib.Filename.quote dir) cmd in
-  let argv = [| "/bin/sh"; "-c"; full |] in
+  let argv = Array.of_list (Onton.Host.windows_command [ "sh"; "-c"; full ]) in
   let env = clean_env () in
   let devnull = Unix.openfile Onton.Host.null_device [ Unix.O_RDONLY ] 0 in
   let pid =
     Stdlib.Fun.protect
       ~finally:(fun () -> try Unix.close devnull with _ -> ())
       (fun () ->
-        Unix.create_process_env "/bin/sh" argv env devnull Unix.stdout
+        Unix.create_process_env argv.(0) argv env devnull Unix.stdout
           Unix.stderr)
   in
   let rec waitpid () =
@@ -248,13 +248,27 @@ let rec rm_rf path =
   | exception Unix.Unix_error (Unix.ENOENT, _, _) -> ()
   | stat -> (
       match stat.Unix.st_kind with
-      | Unix.S_DIR ->
+      | Unix.S_DIR -> (
           Stdlib.Sys.readdir path
           |> Array.iter ~f:(fun child ->
-                 rm_rf (Stdlib.Filename.concat path child));
-          Unix.rmdir path
+              rm_rf (Stdlib.Filename.concat path child));
+          (try Unix.chmod path 0o700 with _ -> ());
+          try Unix.rmdir path
+          with
+          | Unix.Unix_error (Unix.ENOTEMPTY, _, _)
+          when Onton.Host.is_windows
+          -> (
+            Unix.sleepf 0.05;
+            try Unix.rmdir path with _ -> ()))
       | Unix.S_REG | Unix.S_CHR | Unix.S_BLK | Unix.S_LNK | Unix.S_FIFO
-      | Unix.S_SOCK -> Unix.unlink path)
+      | Unix.S_SOCK -> (
+          (if Onton.Host.is_windows then
+             try Unix.chmod path 0o600 with _ -> ());
+          try Unix.unlink path
+          with
+          | Unix.Unix_error (Unix.EACCES, _, _) when Onton.Host.is_windows ->
+            Unix.sleepf 0.05;
+            Unix.unlink path))
 
 let with_temp_repo f =
   let dir = Stdlib.Filename.temp_dir "onton-test-repo-" "" in
