@@ -126,11 +126,13 @@ let clean_env () =
   let git_config =
     if Host.is_windows then
       [
-        "GIT_CONFIG_COUNT=2";
+        "GIT_CONFIG_COUNT=3";
         "GIT_CONFIG_KEY_0=core.hooksPath";
         "GIT_CONFIG_VALUE_0=" ^ Host.null_device;
         "GIT_CONFIG_KEY_1=core.longpaths";
         "GIT_CONFIG_VALUE_1=true";
+        "GIT_CONFIG_KEY_2=advice.graftFileDeprecated";
+        "GIT_CONFIG_VALUE_2=false";
       ]
     else
       [
@@ -159,7 +161,7 @@ let clean_env () =
           (* Scope proofs must inspect the objects that a remote will receive,
              never a local replacement or grafted ancestry view. *)
           "GIT_NO_REPLACE_OBJECTS=1";
-          "GIT_GRAFT_FILE=";
+          ("GIT_GRAFT_FILE=" ^ if Host.is_windows then Host.null_device else "");
           "GIT_TERMINAL_PROMPT=0";
           "GIT_ASKPASS=" ^ askpass;
           "GCM_INTERACTIVE=never";

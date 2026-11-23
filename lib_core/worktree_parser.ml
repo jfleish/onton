@@ -27,6 +27,8 @@ let normalize_path ~cwd path =
   let rec strip_dot_suffix s =
     if String.length s > 2 && String.is_suffix s ~suffix:"/." then
       strip_dot_suffix (String.chop_suffix_exn s ~suffix:"/.")
+    else if String.length s > 2 && String.is_suffix s ~suffix:"\\." then
+      strip_dot_suffix (String.chop_suffix_exn s ~suffix:"\\.")
     else s
   in
   strip_dot_suffix p

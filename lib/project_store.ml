@@ -274,7 +274,7 @@ let save_gameplan_source ~project_name ~source_path =
     then gameplan_yaml_path project_name
     else gameplan_path project_name
   in
-  let ic = Stdlib.open_in source_path in
+  let ic = Stdlib.open_in_bin source_path in
   let content =
     Stdlib.Fun.protect
       ~finally:(fun () -> Stdlib.close_in_noerr ic)

@@ -23,32 +23,32 @@ let rec wait pid =
   try snd (Unix.waitpid [] pid)
   with Unix.Unix_error (Unix.EINTR, _, _) -> wait pid
 
-let child_checks message f =
-  match Unix.fork () with
-  | 0 -> ( try exit (if f () then 0 else 2) with _ -> exit 3)
-  | child -> check message (wait child = Unix.WEXITED 0)
+let child_checks mode message f =
+  if Host.is_windows then
+    let child =
+      Unix.create_process Sys.executable_name
+        [| Sys.executable_name; "--child-check"; mode |]
+        Unix.stdin Unix.stdout Unix.stderr
+    in
+    check message (wait child = Unix.WEXITED 0)
+  else
+    match Unix.fork () with
+    | 0 -> ( try exit (if f () then 0 else 2) with _ -> exit 3)
+    | child -> check message (wait child = Unix.WEXITED 0)
 
-let () =
+let run () =
   let root = Filename.temp_dir "onton-lifecycle-" "" in
   let before = Sys.getenv_opt "ONTON_DATA_DIR" in
   Unix.putenv "ONTON_DATA_DIR" root;
   Fun.protect
     ~finally:(fun () ->
       Unix.putenv "ONTON_DATA_DIR" (Option.value before ~default:"");
-      let rec remove path =
-        if (Unix.lstat path).Unix.st_kind = Unix.S_DIR then (
-          Array.iter
-            (fun name -> remove (Filename.concat path name))
-            (Sys.readdir path);
-          Unix.rmdir path)
-        else Sys.remove path
-      in
-      remove root)
+      Host.rm_rf root)
     (fun () ->
       let registration = get (L.acquire_registration ()) in
       check "same-process nested acquisition cannot release a held POSIX lock"
         (busy (L.acquire_registration ()));
-      child_checks
+      child_checks "registration-busy"
         "registration excludes another process and ignores inherited releases"
         (fun () ->
           L.release_registration registration;
@@ -58,7 +58,7 @@ let () =
         (busy (L.acquire_retirement registration ~project_name:"example"));
       L.release_registration registration;
       L.release_registration registration;
-      child_checks
+      child_checks "shared-use"
         "shared lifetime admits another reader but excludes retirement"
         (fun () ->
           let r = get (L.acquire_registration ()) in
@@ -78,7 +78,8 @@ let () =
       write (Filename.concat original "old") "retired data";
       let outside = Filename.concat root "outside" in
       write outside "unrelated data";
-      Unix.symlink outside (Filename.concat original "outside-link");
+      if not Host.is_windows then
+        Unix.symlink outside (Filename.concat original "outside-link");
       get (L.retire registration retirement);
       check "retirement removes only the old pathname atomically"
         (not (Sys.file_exists original));
@@ -144,80 +145,86 @@ let () =
       check "released registration cannot authorize new ownership"
         (Result.is_error (L.acquire_use registration ~project_name:"other"));
       (* A killed worker releases its lifetime lease without a stale-PID guess. *)
-      let ready_r, ready_w = Unix.pipe ~cloexec:true () in
-      let finish_r, finish_w = Unix.pipe ~cloexec:true () in
-      let child =
-        match Unix.fork () with
-        | 0 ->
-            Unix.close ready_r;
-            Unix.close finish_w;
-            let r = get (L.acquire_registration ()) in
-            let _use = get (L.acquire_writer r ~project_name:"crash") in
-            L.release_registration r;
-            ignore (Unix.write ready_w (Bytes.of_string "R") 0 1);
-            Unix.close ready_w;
-            ignore (Unix.read finish_r (Bytes.create 1) 0 1);
-            exit 0
-        | pid -> pid
-      in
-      Unix.close ready_w;
-      Unix.close finish_r;
-      check "worker acquired lease before crash injection"
-        (Unix.read ready_r (Bytes.create 1) 0 1 = 1);
-      Unix.close ready_r;
-      let r = get (L.acquire_registration ()) in
-      check "live worker blocks retirement without an exclusive project lock"
-        (busy (L.acquire_retirement r ~project_name:"crash"));
-      check "live writer excludes another writer"
-        (busy (L.acquire_writer r ~project_name:"crash"));
-      check "live writer excludes shared lifetime readers"
-        (busy (L.acquire_use r ~project_name:"crash"));
-      Unix.kill child Sys.sigkill;
-      ignore (wait child);
-      Unix.close finish_w;
-      let replacement = get (L.acquire_writer r ~project_name:"crash") in
-      L.release_use replacement;
-      let retired = get (L.acquire_retirement r ~project_name:"crash") in
-      L.release_retirement retired;
-      L.release_registration r;
-      let retired_project = Project_store.project_dir "killed-retirement" in
-      Unix.mkdir retired_project 0o700;
-      write (Filename.concat retired_project "old") "captured";
-      let ready_r, ready_w = Unix.pipe ~cloexec:true () in
-      let finish_r, finish_w = Unix.pipe ~cloexec:true () in
-      let child =
-        match Unix.fork () with
-        | 0 ->
-            Unix.close ready_r;
-            Unix.close finish_w;
-            let r = get (L.acquire_registration ()) in
-            let retirement =
-              get (L.acquire_retirement r ~project_name:"killed-retirement")
-            in
-            get (L.retire r retirement);
-            ignore (Unix.write ready_w (Bytes.of_string "R") 0 1);
-            Unix.close ready_w;
-            ignore (Unix.read finish_r (Bytes.create 1) 0 1);
-            exit 0
-        | pid -> pid
-      in
-      Unix.close ready_w;
-      Unix.close finish_r;
-      check "retirement rename completed before process termination"
-        (Unix.read ready_r (Bytes.create 1) 0 1 = 1
-        && not (Sys.file_exists retired_project));
-      Unix.close ready_r;
-      Unix.kill child Sys.sigkill;
-      ignore (wait child);
-      Unix.close finish_w;
-      let r = get (L.acquire_registration ()) in
-      Unix.mkdir retired_project 0o700;
-      write (Filename.concat retired_project "fresh") "new incarnation";
-      get (L.cleanup_retired r);
-      check
-        "cleanup after a killed retiring process preserves the next incarnation"
-        (read (Filename.concat retired_project "fresh") = "new incarnation");
-      L.release_registration r;
+      (if Host.is_windows then
+         print_endline
+           "project lifecycle crash injection: SKIPPED (Unix fork/signals are \
+            unsupported)"
+       else
+         let ready_r, ready_w = Unix.pipe ~cloexec:true () in
+         let finish_r, finish_w = Unix.pipe ~cloexec:true () in
+         let child =
+           match Unix.fork () with
+           | 0 ->
+               Unix.close ready_r;
+               Unix.close finish_w;
+               let r = get (L.acquire_registration ()) in
+               let _use = get (L.acquire_writer r ~project_name:"crash") in
+               L.release_registration r;
+               ignore (Unix.write ready_w (Bytes.of_string "R") 0 1);
+               Unix.close ready_w;
+               ignore (Unix.read finish_r (Bytes.create 1) 0 1);
+               exit 0
+           | pid -> pid
+         in
+         Unix.close ready_w;
+         Unix.close finish_r;
+         check "worker acquired lease before crash injection"
+           (Unix.read ready_r (Bytes.create 1) 0 1 = 1);
+         Unix.close ready_r;
+         let r = get (L.acquire_registration ()) in
+         check "live worker blocks retirement without an exclusive project lock"
+           (busy (L.acquire_retirement r ~project_name:"crash"));
+         check "live writer excludes another writer"
+           (busy (L.acquire_writer r ~project_name:"crash"));
+         check "live writer excludes shared lifetime readers"
+           (busy (L.acquire_use r ~project_name:"crash"));
+         Unix.kill child Sys.sigkill;
+         ignore (wait child);
+         Unix.close finish_w;
+         let replacement = get (L.acquire_writer r ~project_name:"crash") in
+         L.release_use replacement;
+         let retired = get (L.acquire_retirement r ~project_name:"crash") in
+         L.release_retirement retired;
+         L.release_registration r;
+         let retired_project = Project_store.project_dir "killed-retirement" in
+         Unix.mkdir retired_project 0o700;
+         write (Filename.concat retired_project "old") "captured";
+         let ready_r, ready_w = Unix.pipe ~cloexec:true () in
+         let finish_r, finish_w = Unix.pipe ~cloexec:true () in
+         let child =
+           match Unix.fork () with
+           | 0 ->
+               Unix.close ready_r;
+               Unix.close finish_w;
+               let r = get (L.acquire_registration ()) in
+               let retirement =
+                 get (L.acquire_retirement r ~project_name:"killed-retirement")
+               in
+               get (L.retire r retirement);
+               ignore (Unix.write ready_w (Bytes.of_string "R") 0 1);
+               Unix.close ready_w;
+               ignore (Unix.read finish_r (Bytes.create 1) 0 1);
+               exit 0
+           | pid -> pid
+         in
+         Unix.close ready_w;
+         Unix.close finish_r;
+         check "retirement rename completed before process termination"
+           (Unix.read ready_r (Bytes.create 1) 0 1 = 1
+           && not (Sys.file_exists retired_project));
+         Unix.close ready_r;
+         Unix.kill child Sys.sigkill;
+         ignore (wait child);
+         Unix.close finish_w;
+         let r = get (L.acquire_registration ()) in
+         Unix.mkdir retired_project 0o700;
+         write (Filename.concat retired_project "fresh") "new incarnation";
+         get (L.cleanup_retired r);
+         check
+           "cleanup after a killed retiring process preserves the next \
+            incarnation"
+           (read (Filename.concat retired_project "fresh") = "new incarnation");
+         L.release_registration r);
       (* Real CLI startup must not overwrite config or prepare a checkout before
          discovering an existing supervisor's exclusive project lock. *)
       let cli = Sys.argv.(1) in
@@ -242,7 +249,7 @@ let () =
         \  - patch: 1\n\
         \    dependsOn: []\n";
       let start ?(no_lock = false) ?(env_no_lock = false) () =
-        let devnull = Unix.openfile "/dev/null" [ Unix.O_RDWR ] 0 in
+        let devnull = Unix.openfile Host.null_device [ Unix.O_RDWR ] 0 in
         let env =
           Unix.environment () |> Array.to_list
           |> List.filter (fun entry ->
@@ -256,14 +263,21 @@ let () =
             (Array.of_list
                ([ cli; "--gameplan"; plan ]
                @ if no_lock then [ "--no-lock" ] else []))
-            env devnull devnull devnull
+            env devnull Unix.stdout Unix.stderr
         in
         Unix.close devnull;
         wait child
       in
       let registration = get (L.acquire_registration ()) in
-      check "CLI startup is serialized with pruning registration"
-        (start () = Unix.WEXITED 75);
+      let status = start () in
+      check
+        ("CLI startup is serialized with pruning registration: "
+        ^
+        match status with
+        | Unix.WEXITED code -> "exit " ^ string_of_int code
+        | Unix.WSIGNALED signal -> "signal " ^ string_of_int signal
+        | Unix.WSTOPPED signal -> "stopped " ^ string_of_int signal)
+        (status = Unix.WEXITED 75);
       L.release_registration registration;
       let lock =
         match Project_lock.acquire ~project_dir ~on_stale:(fun _ -> ()) with
@@ -291,3 +305,28 @@ let () =
             "CLI does not provision while another supervisor owns the project"
             (not (Sys.file_exists (Project_store.managed_repo_dir name)))));
   print_endline "project lifecycle, retirement and startup exclusion: OK"
+
+let child_check mode =
+  match mode with
+  | "registration-busy" -> busy (L.acquire_registration ())
+  | "shared-use" -> (
+      match L.acquire_registration () with
+      | Error _ -> false
+      | Ok registration -> (
+          match L.acquire_use registration ~project_name:"example" with
+          | Error _ ->
+              L.release_registration registration;
+              false
+          | Ok lease ->
+              L.release_use lease;
+              let blocked =
+                busy (L.acquire_retirement registration ~project_name:"example")
+              in
+              L.release_registration registration;
+              blocked))
+  | _ -> false
+
+let () =
+  if Array.length Sys.argv = 3 && String.equal Sys.argv.(1) "--child-check" then
+    exit (if child_check Sys.argv.(2) then 0 else 2)
+  else run ()

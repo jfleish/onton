@@ -116,24 +116,24 @@ let () =
         ^ String.escaped partial_stdout.stdout
         ^ ")")
         (String.equal partial_stdout.stdout "xxxxxxxx\n");
-      if Host.is_windows then
-        Stdio.print_endline
-          "stderr-after-stdout-EOF fd redirection: SKIPPED (Windows socketpair \
-           descriptors cannot be redirected by sh)"
-      else (
-        let partial_stderr, elapsed =
-          run ("exec 1>&-; { " ^ pulse ^ "; } >&2")
-        in
-        expect "stderr activity after stdout EOF keeps the process alive"
-          ((not partial_stderr.timed_out) && partial_stderr.exit_code = 0);
-        expect "stderr activity exceeds the original deadline"
-          Float.(elapsed >= 0.7);
-        expect "partial stderr is captured at EOF"
-          (String.equal partial_stderr.stderr "xxxxxxxx");
-        let closed_pipes, elapsed = run "exec 1>&- 2>&-; exec /bin/sleep 30" in
-        expect "closed pipes do not leave a live child waiting"
-          closed_pipes.timed_out;
-        expect "closed-pipe wait is bounded" Float.(elapsed < 3.0));
+      (if Host.is_windows then
+         Stdio.print_endline
+           "stderr-after-stdout-EOF fd redirection: SKIPPED (Windows \
+            socketpair descriptors cannot be redirected by sh)"
+       else
+         let partial_stderr, elapsed =
+           run ("exec 1>&-; { " ^ pulse ^ "; } >&2")
+         in
+         expect "stderr activity after stdout EOF keeps the process alive"
+           ((not partial_stderr.timed_out) && partial_stderr.exit_code = 0);
+         expect "stderr activity exceeds the original deadline"
+           Float.(elapsed >= 0.7);
+         expect "partial stderr is captured at EOF"
+           (String.equal partial_stderr.stderr "xxxxxxxx");
+         let closed_pipes, elapsed = run "exec 1>&- 2>&-; exec /bin/sleep 30" in
+         expect "closed pipes do not leave a live child waiting"
+           closed_pipes.timed_out;
+         expect "closed-pipe wait is bounded" Float.(elapsed < 3.0));
       let blocked_callback, elapsed =
         run "printf 'event\n'; exec /bin/sleep 30"
           ~process_line:(fun _ -> [ Types.Stream_event.Text_delta "event" ])
@@ -188,82 +188,85 @@ let () =
         (match cancelled with Error `Timeout -> true | Ok _ -> false);
       if Host.is_windows then
         Stdio.print_endline
-          "idle timeout backend registry: SKIPPED (shebang scripts and ':' PATH \
-           are POSIX-only)"
+          "idle timeout backend registry: SKIPPED (shebang scripts and ':' \
+           PATH are POSIX-only)"
       else
-      let backends =
-        [
-          ( "claude",
-            {|{"type":"content_block_delta","delta":{"type":"text_delta","text":"hello"}}|},
-            {|{"type":"result","result":"done","stop_reason":"end_turn"}|} );
-          ( "codex",
-            {|{"type":"item.completed","item":{"type":"agent_message","text":"hello"}}|},
-            {|{"type":"turn.completed"}|} );
-          ( "opencode",
-            {|{"type":"text","part":{"type":"text","text":"hello"}}|},
-            {|{"type":"step_finish","part":{"type":"step-finish","reason":"stop"}}|}
-          );
-          ( "pi",
-            {|{"type":"message_update","assistantMessageEvent":{"type":"text_delta","delta":"hello"}}|},
-            {|{"type":"agent_end","messages":[]}|} );
-          ( "gemini",
-            {|{"type":"message","role":"assistant","delta":true,"content":"hello"}|},
-            {|{"type":"result","status":"success"}|} );
-        ]
-      in
-      List.iter backends ~f:(fun (name, activity, terminal) ->
-          write_executable
-            (Stdlib.Filename.concat root name)
-            (Printf.sprintf
-               "#!/bin/sh\n\
-                i=0\n\
-                while [ $i -lt 8 ]; do\n\
-               \  printf '%%s\\n' %s\n\
-               \  /bin/sleep 0.1\n\
-               \  i=$((i + 1))\n\
-                done\n\
-                printf '%%s\\n' %s\n"
-               (Stdlib.Filename.quote activity)
-               (Stdlib.Filename.quote terminal)));
-      let path =
-        root ^ ":" ^ Option.value (Stdlib.Sys.getenv_opt "PATH") ~default:""
-      in
-      let extension = Stdlib.Filename.concat root "pi-extension.ts" in
-      write_executable extension "export default function () {}";
-      with_env "ONTON_PI_EXTENSION" extension @@ fun () ->
-      with_env "PATH" path @@ fun () ->
-      with_env "ONTON_DATA_DIR" (Stdlib.Filename.concat root "data")
-      @@ fun () ->
-      let registry =
-        Backend_registry.create ~process_mgr ~clock ~timeout:0.5 ~setsid_exec
-          ~extras:[]
-      in
-      List.iter backends ~f:(fun (name, _, _) ->
-          let backend =
-            Backend_registry.get registry ~backend:name ~model:None ~effort:None
-          in
-          let events = ref [] in
-          let start = Eio.Time.now clock in
-          let result =
-            backend.run_streaming ~project_name:"idle-timeout" ~cwd ~patch_id
-              ~prompt:"work" ~resume_session:None ~session_uuid:("idle-" ^ name)
-              ~complexity:None ~on_event:(fun event ->
-                events := event :: !events)
-          in
-          expect
-            (name ^ " output extends the session")
-            ((not result.timed_out) && result.saw_final_result);
-          expect
-            (name ^ " runs past the original deadline")
-            Float.(Eio.Time.now clock -. start >= 0.7);
-          expect
-            (name ^ " forwards streamed activity")
-            (List.count !events ~f:(function
-               | Types.Stream_event.Text_delta "hello" -> true
-               | Types.Stream_event.Text_delta _
-               | Types.Stream_event.Turn_started | Types.Stream_event.Tool_use _
-               | Types.Stream_event.Final_result _ | Types.Stream_event.Error _
-               | Types.Stream_event.Session_init _ ->
-                   false)
-            = 8)));
+        let backends =
+          [
+            ( "claude",
+              {|{"type":"content_block_delta","delta":{"type":"text_delta","text":"hello"}}|},
+              {|{"type":"result","result":"done","stop_reason":"end_turn"}|} );
+            ( "codex",
+              {|{"type":"item.completed","item":{"type":"agent_message","text":"hello"}}|},
+              {|{"type":"turn.completed"}|} );
+            ( "opencode",
+              {|{"type":"text","part":{"type":"text","text":"hello"}}|},
+              {|{"type":"step_finish","part":{"type":"step-finish","reason":"stop"}}|}
+            );
+            ( "pi",
+              {|{"type":"message_update","assistantMessageEvent":{"type":"text_delta","delta":"hello"}}|},
+              {|{"type":"agent_end","messages":[]}|} );
+            ( "gemini",
+              {|{"type":"message","role":"assistant","delta":true,"content":"hello"}|},
+              {|{"type":"result","status":"success"}|} );
+          ]
+        in
+        List.iter backends ~f:(fun (name, activity, terminal) ->
+            write_executable
+              (Stdlib.Filename.concat root name)
+              (Printf.sprintf
+                 "#!/bin/sh\n\
+                  i=0\n\
+                  while [ $i -lt 8 ]; do\n\
+                 \  printf '%%s\\n' %s\n\
+                 \  /bin/sleep 0.1\n\
+                 \  i=$((i + 1))\n\
+                  done\n\
+                  printf '%%s\\n' %s\n"
+                 (Stdlib.Filename.quote activity)
+                 (Stdlib.Filename.quote terminal)));
+        let path =
+          root ^ ":" ^ Option.value (Stdlib.Sys.getenv_opt "PATH") ~default:""
+        in
+        let extension = Stdlib.Filename.concat root "pi-extension.ts" in
+        write_executable extension "export default function () {}";
+        with_env "ONTON_PI_EXTENSION" extension @@ fun () ->
+        with_env "PATH" path @@ fun () ->
+        with_env "ONTON_DATA_DIR" (Stdlib.Filename.concat root "data")
+        @@ fun () ->
+        let registry =
+          Backend_registry.create ~process_mgr ~clock ~timeout:0.5 ~setsid_exec
+            ~extras:[]
+        in
+        List.iter backends ~f:(fun (name, _, _) ->
+            let backend =
+              Backend_registry.get registry ~backend:name ~model:None
+                ~effort:None
+            in
+            let events = ref [] in
+            let start = Eio.Time.now clock in
+            let result =
+              backend.run_streaming ~project_name:"idle-timeout" ~cwd ~patch_id
+                ~prompt:"work" ~resume_session:None
+                ~session_uuid:("idle-" ^ name) ~complexity:None
+                ~on_event:(fun event -> events := event :: !events)
+            in
+            expect
+              (name ^ " output extends the session")
+              ((not result.timed_out) && result.saw_final_result);
+            expect
+              (name ^ " runs past the original deadline")
+              Float.(Eio.Time.now clock -. start >= 0.7);
+            expect
+              (name ^ " forwards streamed activity")
+              (List.count !events ~f:(function
+                 | Types.Stream_event.Text_delta "hello" -> true
+                 | Types.Stream_event.Text_delta _
+                 | Types.Stream_event.Turn_started
+                 | Types.Stream_event.Tool_use _
+                 | Types.Stream_event.Final_result _
+                 | Types.Stream_event.Error _
+                 | Types.Stream_event.Session_init _ ->
+                     false)
+              = 8)));
   Stdio.print_endline "backend idle timeout: passed"

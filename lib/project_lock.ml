@@ -79,7 +79,12 @@ let acquired ~path fd =
 
 let acquire ~project_dir ~on_stale =
   let path = path_for ~project_dir in
-  let lock_path = if Host.is_windows then path ^ ".guard" else path in
+  (* A locked file inside the directory prevents renaming that directory on
+     Windows. Keep the guard beside it while leaving readable PID metadata at
+     the established [onton.lock] path. *)
+  let lock_path =
+    if Host.is_windows then project_dir ^ ".onton-lock.guard" else path
+  in
   ensure_dir project_dir;
   match
     Unix.openfile lock_path [ Unix.O_CREAT; Unix.O_RDWR; Unix.O_CLOEXEC ] 0o644

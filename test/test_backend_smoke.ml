@@ -113,8 +113,7 @@ let () =
     let on_event ev = events := ev :: !events in
     let args =
       sh_args
-        (Printf.sprintf
-           "perl -e 'print q!%s!; print q!x! x %d; print qq!%s!;'"
+        (Printf.sprintf "perl -e 'print q!%s!; print q!x! x %d; print qq!%s!;'"
            {|{"type":"item.completed","item":{"type":"agent_message","text":"|}
            (String.length large_text) {|"}}\n{"type":"turn.completed"}\n|})
     in
@@ -160,8 +159,7 @@ let () =
     let result =
       Llm_backend.spawn_and_stream ~process_mgr ~clock ~timeout:60.0 ~cwd
         ~env:(Unix.environment ()) ~setsid_exec:None
-        ~args:(print_args "not-json\n")
-        ~session_uuid:None
+        ~args:(print_args "not-json\n") ~session_uuid:None
         ~patch_id:(Types.Patch_id.of_string "smoke")
         ~process_line:(fun _ -> [])
         ~on_event
@@ -311,8 +309,8 @@ let () =
           (sh_args
              (Printf.sprintf
                 "printf '%s\\n'; sleep 0.2; i=0; while [ \"$i\" -lt 2048 ]; do \
-                 printf '%s\\n'; i=$((i + 1)); done; printf 'flush complete\\n' \
-                 >&2"
+                 printf '%s\\n'; i=$((i + 1)); done; printf 'flush \
+                 complete\\n' >&2"
                 payload flush_line))
         ~session_uuid:None
         ~patch_id:(Types.Patch_id.of_string "smoke")

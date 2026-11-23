@@ -151,7 +151,8 @@ let () =
     Array.of_list
       ([
          "HOME=" ^ root;
-         "PATH=" ^ fake_bin ^ ":"
+         "PATH=" ^ fake_bin
+         ^ (if Host.is_windows then ";" else ":")
          ^ Option.value (Sys.getenv_opt "PATH") ~default:"";
          "ONTON_FAKE_PROMPT=" ^ prompt_log;
          "ONTON_DATA_DIR=" ^ Filename.concat root "data";
@@ -159,23 +160,23 @@ let () =
       @ env)
   in
   let process_command =
-    String.concat " "
-      (List.map Filename.quote
-         [
-           binary;
-           "--gameplan";
-           gameplan;
-           "--repo-root";
-           managed;
-           "--project-name";
-           "v3-test";
-           "--protocol-version";
-           "3";
-           "--ack-timeout";
-           "3";
-         ])
+    [|
+      binary;
+      "--gameplan";
+      gameplan;
+      "--repo-root";
+      managed;
+      "--project-name";
+      "v3-test";
+      "--protocol-version";
+      "3";
+      "--ack-timeout";
+      "3";
+    |]
   in
-  let output, input, errors = Unix.open_process_full process_command env in
+  let output, input, errors =
+    Unix.open_process_args_full binary process_command env
+  in
   let output = ref output and input = ref input and errors = ref errors in
 
   let module F = Onton_test_support.Coordinator_store_fixture in
@@ -578,7 +579,7 @@ let () =
   apply (Bind_resource ("resource-2", patch));
   apply (Assign (assignment 3 "resource-2", 0L));
   let next_output, next_input, next_errors =
-    Unix.open_process_full process_command env
+    Unix.open_process_args_full binary process_command env
   in
   output := next_output;
   input := next_input;
@@ -633,7 +634,7 @@ let () =
   in
   apply (Assign (recovery, 1L));
   let next_output, next_input, next_errors =
-    Unix.open_process_full process_command env
+    Unix.open_process_args_full binary process_command env
   in
   output := next_output;
   input := next_input;
@@ -667,7 +668,10 @@ let () =
              "ONTON_FAKE_PROMPT=" ^ prompt_log;
              "ONTON_DATA_DIR=" ^ Filename.concat root "loop-data";
            ])
-    ^ " " ^ process_command ^ "\n");
+    ^ " "
+    ^ (process_command |> Array.to_list |> List.map Filename.quote
+     |> String.concat " ")
+    ^ "\n");
   Unix.chmod helper 0o755;
   let loop_fixture = F.fixture () in
   let _, initial, loop_id = F.setup ~run_id:"run-1" loop_fixture in

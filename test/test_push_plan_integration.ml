@@ -23,6 +23,15 @@ module E = Branch_reconcile_executor
 
     Every git command runs against the real binary; no mocks. *)
 
+let shell_path path =
+  if Host.is_windows then
+    String.map path ~f:(fun c -> if Char.equal c '\\' then '/' else c)
+  else path
+
+let shell_command path =
+  if Host.is_windows then "sh " ^ Stdlib.Filename.quote (shell_path path)
+  else path
+
 let with_temp_dir f =
   let dir =
     Stdlib.Filename.concat
@@ -30,14 +39,7 @@ let with_temp_dir f =
       (Printf.sprintf "onton-push-plan-%d-%d" (Unix.getpid ()) (Random.bits ()))
   in
   Unix.mkdir dir 0o755;
-  Stdlib.at_exit (fun () ->
-      try
-        let _ =
-          Stdlib.Sys.command
-            (Printf.sprintf "rm -rf %s" (Stdlib.Filename.quote dir))
-        in
-        ()
-      with _ -> ());
+  Stdlib.at_exit (fun () -> Host.rm_rf dir);
   f dir
 
 (* Delegate to the scrubbed-env helpers in {!Onton_test_support.Git_env} so an
@@ -724,7 +726,7 @@ let scenario_rewrite_interleavings ?(conflict = false) ?(drop_remote = false)
         then failwith "precondition: rebase target/result must omit remote");
   let publish_writer =
     Printf.sprintf "git --git-dir=%s update-ref refs/heads/feat %s %s"
-      (Stdlib.Filename.quote origin)
+      (Stdlib.Filename.quote (shell_path origin))
       writer old_remote
   in
   if race = 1 || race = 3 then (
@@ -734,16 +736,17 @@ let scenario_rewrite_interleavings ?(conflict = false) ?(drop_remote = false)
     let hooks = Stdlib.Filename.concat managed "hooks" in
     Unix.mkdir hooks 0o755;
     let hook = Stdlib.Filename.concat hooks "receive-pack" in
-    let oc = Stdlib.open_out hook in
+    let oc = Stdlib.open_out_bin hook in
     Stdlib.output_string oc
       ("#!/bin/sh\nset -eu\ncd "
-      ^ Stdlib.Filename.quote managed
+      ^ Stdlib.Filename.quote (shell_path managed)
       ^ "\n" ^ publish_writer
       ^ "\ngit fetch -q origin\nexec git-receive-pack \"$@\"\n");
     Stdlib.close_out oc;
     Unix.chmod hook 0o755;
     sh ~dir:managed
-      ("git config onton-test.receivepack " ^ Stdlib.Filename.quote hook));
+      ("git config onton-test.receivepack "
+      ^ Stdlib.Filename.quote (shell_command hook)));
   let outcome =
     publish ~preserve_history ~clock ~process_mgr ~path:worktree
       ~branch:(Types.Branch.of_string "feat")
@@ -850,19 +853,20 @@ let scenario_initial_publication env ~preserve_history ~race =
     let hooks = Stdlib.Filename.concat managed "hooks" in
     Unix.mkdir hooks 0o755;
     let hook = Stdlib.Filename.concat hooks "receive-pack" in
-    let oc = Stdlib.open_out hook in
+    let oc = Stdlib.open_out_bin hook in
     Stdlib.output_string oc
       (Printf.sprintf
          "#!/bin/sh\n\
           set -eu\n\
           git --git-dir=%s update-ref refs/heads/feat %s\n\
           exec git-receive-pack \"$@\"\n"
-         (Stdlib.Filename.quote origin)
+         (Stdlib.Filename.quote (shell_path origin))
          base);
     Stdlib.close_out oc;
     Unix.chmod hook 0o755;
     sh ~dir:managed
-      ("git config onton-test.receivepack " ^ Stdlib.Filename.quote hook));
+      ("git config onton-test.receivepack "
+      ^ Stdlib.Filename.quote (shell_command hook)));
   let outcome =
     publish ~preserve_history ~clock ~process_mgr ~path:managed
       ~branch:(Types.Branch.of_string "feat")
@@ -988,7 +992,7 @@ let scenario_missing_tracking env ~preserve_history case =
       let hooks = Stdlib.Filename.concat managed "hooks" in
       Unix.mkdir hooks 0o755;
       let hook = Stdlib.Filename.concat hooks "receive-pack" in
-      let oc = Stdlib.open_out hook in
+      let oc = Stdlib.open_out_bin hook in
       Stdlib.output_string oc
         (Printf.sprintf
            "#!/bin/sh\n\
@@ -998,13 +1002,14 @@ let scenario_missing_tracking env ~preserve_history case =
             exit 88; fi\n\
             git --git-dir=%s update-ref refs/heads/feat %s %s\n\
             exec git-receive-pack \"$@\"\n"
-           (Stdlib.Filename.quote managed)
-           (Stdlib.Filename.quote origin)
+           (Stdlib.Filename.quote (shell_path managed))
+           (Stdlib.Filename.quote (shell_path origin))
            writer shared);
       Stdlib.close_out oc;
       Unix.chmod hook 0o755;
       sh ~dir:managed
-        ("git config onton-test.receivepack " ^ Stdlib.Filename.quote hook)
+        ("git config onton-test.receivepack "
+        ^ Stdlib.Filename.quote (shell_command hook))
   | Remote_unavailable ->
       sh ~dir:managed
         ("git remote set-url origin "

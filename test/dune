@@ -1192,9 +1192,15 @@
 
 (rule
  (alias runtest)
+ (enabled_if (= %{os_type} Win32))
  (deps test_supervisor_escape.py (package onton))
- (action
-  (run python3 %{dep:test_supervisor_escape.py} %{bin:onton-setsid-exec})))
+ (action (run python %{dep:test_supervisor_escape.py} %{bin:onton-setsid-exec})))
+
+(rule
+ (alias runtest)
+ (enabled_if (<> %{os_type} Win32))
+ (deps test_supervisor_escape.py (package onton))
+ (action (run python3 %{dep:test_supervisor_escape.py} %{bin:onton-setsid-exec})))
 
 (test
  (name test_poller_batch)
@@ -1476,6 +1482,14 @@
 
 (rule
  (alias runtest)
+ (enabled_if (= %{os_type} Win32))
+ (deps test_pre_commit_git_isolation.py ../scripts/install-hooks.sh)
+ (action
+  (run python %{dep:test_pre_commit_git_isolation.py} %{dep:../scripts/install-hooks.sh})))
+
+(rule
+ (alias runtest)
+ (enabled_if (<> %{os_type} Win32))
  (deps test_pre_commit_git_isolation.py ../scripts/install-hooks.sh)
  (action
   (run python3 %{dep:test_pre_commit_git_isolation.py} %{dep:../scripts/install-hooks.sh})))

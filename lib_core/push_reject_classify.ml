@@ -105,6 +105,7 @@ let classify ~stderr ~stdout =
   then Push_pattern_block
   else if
     contains_ci output "stale info"
+    || contains_ci output "incorrect old value provided"
     || contains_ci output "fetch first"
     || contains_ci output "non-fast-forward"
     || contains_ci output "cannot lock ref"

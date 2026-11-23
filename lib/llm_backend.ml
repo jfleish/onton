@@ -167,9 +167,9 @@ let spawn_and_stream_with_stdin ~stdin_data ~process_mgr ~clock ~timeout ~cwd
                       Eio.Fiber.first
                         (fun () ->
                           Eio.Flow.close stdin_r;
-                          if not (String.is_empty stdin_data) then
-                            (try Eio.Flow.copy_string stdin_data stdin_w with
-                             | End_of_file | Eio.Exn.Io _ -> ());
+                          (if not (String.is_empty stdin_data) then
+                             try Eio.Flow.copy_string stdin_data stdin_w
+                             with End_of_file | Eio.Exn.Io _ -> ());
                           Eio.Flow.close stdin_w;
                           Eio.Flow.close stdout_w;
                           Eio.Flow.close stderr_w;

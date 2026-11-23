@@ -17,10 +17,7 @@ let with_main_and_worktree f =
       let wt_parent = Filename.temp_dir "onton-repo-root-wt-" "" in
       let wt = wt_parent // "patch-1" in
       Fun.protect
-        ~finally:(fun () ->
-          ignore
-            (Sys.command
-               (Printf.sprintf "rm -rf %s" (Filename.quote wt_parent))))
+        ~finally:(fun () -> Host.rm_rf wt_parent)
         (fun () ->
           Git_env.run_git ~cwd:main [ "worktree"; "add"; "-b"; "feat"; wt ];
           f ~main ~wt))
@@ -36,12 +33,15 @@ let with_chdir dir f =
 let real_path p =
   (* Resolve symlinks — macOS /tmp → /private/tmp — so path comparisons hold
      regardless of how [Sys.getcwd] vs the [git] binary render the prefix. *)
-  let ic =
-    Unix.open_process_in (Printf.sprintf "cd %s && pwd -P" (Filename.quote p))
-  in
-  let line = input_line ic in
-  ignore (Unix.close_process_in ic);
-  line
+  if Host.is_windows then
+    String.map (fun c -> if Char.equal c '\\' then '/' else c) (Unix.realpath p)
+  else
+    let ic =
+      Unix.open_process_in (Printf.sprintf "cd %s && pwd -P" (Filename.quote p))
+    in
+    let line = input_line ic in
+    ignore (Unix.close_process_in ic);
+    line
 
 let assert_eq ~ctx expected actual =
   if String.equal expected actual then ()
@@ -80,8 +80,7 @@ let test_non_repo_passthrough () =
      error paths surface the non-repo case rather than masking it. *)
   let tmp = Filename.temp_dir "onton-repo-root-nonrepo-" "" in
   Fun.protect
-    ~finally:(fun () ->
-      ignore (Sys.command (Printf.sprintf "rm -rf %s" (Filename.quote tmp))))
+    ~finally:(fun () -> Host.rm_rf tmp)
     (fun () ->
       let got = Repo_root.normalize tmp in
       (* No git repo here, so the resolved path equals the input. *)

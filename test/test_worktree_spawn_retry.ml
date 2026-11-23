@@ -188,14 +188,7 @@ let test_supervisor_retry env =
       let code, out, err =
         Process_tree.run ~process_mgr:mgr ~clock:(Eio.Stdenv.clock env)
           ~env:(Unix.environment ())
-          [
-            "sh";
-            "-c";
-            "printf started >> \"$1\"; printf captured; printf diagnostic >&2; \
-             exit 7";
-            "sh";
-            file;
-          ]
+          [ Stdlib.Sys.executable_name; "--nonzero-child"; file ]
       in
       let executions =
         Stdlib.In_channel.with_open_bin file Stdlib.In_channel.input_all
@@ -288,7 +281,7 @@ let test_supervisor_signal_status env =
         ("SIG" ^ name ^ " forwarding emits no supervisor error")
         (Buffer.length stderr = 0))
 
-let () =
+let run () =
   Stdlib.print_endline "Worktree spawn-retry:";
   (* [retry_transient_spawn] yields between attempts, so run inside a scheduler. *)
   Eio_main.run (fun env ->
@@ -299,8 +292,23 @@ let () =
       test_composite_failures env;
       test_supervisor_retry env;
       test_supervisor_spawn_failures env;
-      test_supervisor_signal_status env);
+      if Host.is_windows then
+        Stdlib.print_endline
+          "  supervisor signal status: SKIPPED (Windows uses Job Objects)"
+      else test_supervisor_signal_status env);
   if !failures > 0 then (
     Stdlib.Printf.printf "%d/%d checks FAILED\n" !failures !total;
     Stdlib.exit 1)
   else Stdlib.Printf.printf "all %d checks passed\n" !total
+
+let () =
+  if
+    Array.length Stdlib.Sys.argv = 3
+    && String.equal Stdlib.Sys.argv.(1) "--nonzero-child"
+  then (
+    Stdlib.Out_channel.with_open_bin Stdlib.Sys.argv.(2) (fun channel ->
+        Stdlib.output_string channel "started");
+    Stdlib.print_string "captured";
+    Stdlib.prerr_string "diagnostic";
+    Stdlib.exit 7)
+  else run ()

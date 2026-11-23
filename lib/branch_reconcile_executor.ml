@@ -33,6 +33,10 @@ let resolve io name =
 let git_path io name =
   checked io [ "rev-parse"; "--path-format=absolute"; "--git-path"; name ]
 
+let cleanup_index_lock_after_cancel io =
+  Eio.Cancel.protect (fun () ->
+      try Stdlib.Sys.remove (git_path io "index.lock") with _ -> ())
+
 let read_optional ?(strip = true) io name =
   let path = git_path io name in
   try
@@ -1026,7 +1030,9 @@ let execute ~io ~prefix ~branch ~(operation : Branch_reconcile.operation)
     | Unsupported_destination reason -> Branch_reconcile.Needs_diagnosis reason
     | Probe_failed reason ->
         Branch_reconcile.Retryable { reason; retry_after = None }
-    | exn when Process_tree.has_cancellation exn -> raise exn
+    | exn when Process_tree.has_cancellation exn ->
+        cleanup_index_lock_after_cancel io;
+        raise exn
     | exn ->
         Branch_reconcile.Retryable
           {

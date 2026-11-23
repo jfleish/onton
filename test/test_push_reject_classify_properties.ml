@@ -356,6 +356,16 @@ let prop_porcelain_lease_reason =
               Done\n")
         Push_reject_classify.Lease_violation)
 
+let prop_receive_pack_old_value_race =
+  Test.make ~name:"receive-pack old-value races are lease violations"
+    (Gen.return ()) (fun () ->
+      Push_reject_classify.equal_rejection
+        (Push_reject_classify.classify ~stderr:"error: failed to push some refs"
+           ~stdout:
+             "!\tfoo:refs/heads/foo\t[remote rejected] (incorrect old value \
+              provided)\n")
+        Push_reject_classify.Lease_violation)
+
 let prop_porcelain_unknown_reason =
   Test.make
     ~name:"PRC-19: unknown porcelain reason survives the generic stderr trailer"
@@ -461,6 +471,7 @@ let () =
       prop_merge_queue_locked;
       prop_merge_queue_beats_branch_protection;
       prop_porcelain_lease_reason;
+      prop_receive_pack_old_value_race;
       prop_porcelain_unknown_reason;
       prop_server_diagnostic_preferred;
       prop_stderr_diagnostic_preferred;

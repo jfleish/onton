@@ -48,18 +48,18 @@ let seed_link ~src ~dst =
     match Unix.symlink src dst with
     | () -> ()
     | exception Unix.Unix_error (Unix.EEXIST, _, _) -> ()
-    | exception Unix.Unix_error _ ->
+    | exception Unix.Unix_error _ -> (
         (* Windows only permits symlink creation in Developer Mode or from an
            elevated shell. A hard link keeps the same live-file semantics (the
            backend CLI may atomically replace the source); fall back to a copy
            when the source lives on another volume. *)
-        (try Unix.link src dst with
+        try Unix.link src dst with
         | Unix.Unix_error (Unix.EEXIST, _, _) -> ()
         | Unix.Unix_error _ -> (
-            try copy_file ~src ~dst with e ->
-              Stdlib.Printf.eprintf
-                "onton: could not seed auth file %s: %s\n%!" dst
-                (Exn.to_string e)))
+            try copy_file ~src ~dst
+            with e ->
+              Stdlib.Printf.eprintf "onton: could not seed auth file %s: %s\n%!"
+                dst (Exn.to_string e)))
 
 let resolve_user_config_dir ~env_var ~home_subpath =
   let absolutize path =
@@ -71,7 +71,8 @@ let resolve_user_config_dir ~env_var ~home_subpath =
   | Some dir when not (String.is_empty dir) -> Some (absolutize dir)
   | _ -> (
       match Host.home_dir () with
-      | Some home -> Some (Stdlib.Filename.concat (absolutize home) home_subpath)
+      | Some home ->
+          Some (Stdlib.Filename.concat (absolutize home) home_subpath)
       | None -> None)
 
 (* On macOS, Claude Code stores its OAuth token in the macOS Keychain rather
@@ -331,8 +332,7 @@ let%test
          "projects")
       "-Users-x-worktrees-foo-patch-42"
     |> fun dir ->
-    Stdlib.Filename.concat dir
-      "c9f311bc-7e1a-4b36-bc1f-940513fb75f9.jsonl"
+    Stdlib.Filename.concat dir "c9f311bc-7e1a-4b36-bc1f-940513fb75f9.jsonl"
   in
   String.equal path expected
 

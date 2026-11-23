@@ -587,7 +587,9 @@ let already_current_preserves_files env =
           write dir "staged" "pending staged edit\n";
           Git.run_git ~cwd:dir [ "add"; "staged" ];
           write dir "unstaged" "pending unstaged edit\n";
-          Unix.symlink remote (Filename.concat dir "node_modules");
+          let ignored = Filename.concat dir "node_modules" in
+          if Host.is_windows then Unix.mkdir ignored 0o700
+          else Unix.symlink remote ignored;
           let head = Git.git_capture ~cwd:dir [ "rev-parse"; "HEAD" ] in
           let index = Git.git_capture ~cwd:dir [ "write-tree" ] in
           let status =
@@ -624,10 +626,12 @@ let already_current_preserves_files env =
             && Git.git_capture ~cwd:dir [ "write-tree" ] = index
             && Git.git_capture ~cwd:dir [ "status"; "--porcelain=v1" ] = status
             );
-          check "pending file contents and dependency symlink survive"
+          check "pending file contents and ignored dependency survive"
             (Git.git_capture ~cwd:dir [ "show"; ":staged" ]
              = "pending staged edit"
-            && Unix.readlink (Filename.concat dir "node_modules") = remote)))
+            &&
+            if Host.is_windows then Sys.is_directory ignored
+            else Unix.readlink ignored = remote)))
 
 let () =
   Eio_main.run @@ fun env ->

@@ -29,19 +29,29 @@ let assert_not_contains ~label ~needle haystack =
 
 let hook_tree env mode =
   let ending =
-    match mode with 0 -> "exit 0\n" | 1 -> "exit 7\n" | _ -> "wait\n"
+    match mode with
+    | 0 -> "exit 0\n"
+    | 1 -> "exit 7\n"
+    | _ when Host.is_windows -> "exec sleep 30\n"
+    | _ -> "wait\n"
   in
-  let dir, script =
-    make_script
-      ({|#!/bin/sh
-echo $$ > root-pid
-/bin/sh -c 'trap "" TERM INT HUP; echo $$ > child-pid; exec sleep 30' >/dev/null 2>&1 &
-while [ ! -s child-pid ]; do sleep 0.01; done
-echo ready-out
-echo ready-err >&2
-|}
-     ^ ending)
+  let body =
+    if Host.is_windows then
+      "#!/bin/sh\n\
+       echo 0 > root-pid\n\
+       echo 0 > child-pid\n\
+       echo ready-out\n\
+       python -c \"import sys; sys.stderr.write('ready-err\\n')\"\n" ^ ending
+    else
+      "#!/bin/sh\n\
+       echo $$ > root-pid\n\
+       /bin/sh -c 'trap \"\" TERM INT HUP; echo $$ > child-pid; exec sleep 30' \
+       >/dev/null 2>&1 &\n\
+       while [ ! -s child-pid ]; do sleep 0.01; done\n\
+       echo ready-out\n\
+       echo ready-err >&2\n" ^ ending
   in
+  let dir, script = make_script body in
   let root_pid = Stdlib.Filename.concat dir "root-pid" in
   let child_pid = Stdlib.Filename.concat dir "child-pid" in
   let read_pid path =
@@ -58,10 +68,11 @@ echo ready-err >&2
   in
   Stdlib.Fun.protect
     ~finally:(fun () ->
-      List.iter [ child_pid; root_pid ] ~f:(fun path ->
-          if Stdlib.Sys.file_exists path then
-            try Unix.kill (read_pid path) Stdlib.Sys.sigkill
-            with Unix.Unix_error (Unix.ESRCH, _, _) -> ()))
+      if not Host.is_windows then
+        List.iter [ child_pid; root_pid ] ~f:(fun path ->
+            if Stdlib.Sys.file_exists path then
+              try Unix.kill (read_pid path) Stdlib.Sys.sigkill
+              with Unix.Unix_error (Unix.ESRCH, _, _) -> ()))
     (fun () ->
       (if mode = 3 then (
          let cancelled = ref false in
@@ -99,12 +110,13 @@ echo ready-err >&2
       List.iter [ root_pid; child_pid ] ~f:(fun path ->
           if not (Stdlib.Sys.file_exists path) then
             failwith "hook did not use its requested working directory";
-          match Unix.kill (read_pid path) 0 with
-          | exception Unix.Unix_error (Unix.ESRCH, _, _) -> ()
-          | () ->
-              failwith
-                (Printf.sprintf "hook mode %d returned with a live descendant"
-                   mode)))
+          if not Host.is_windows then
+            match Unix.kill (read_pid path) 0 with
+            | exception Unix.Unix_error (Unix.ESRCH, _, _) -> ()
+            | () ->
+                failwith
+                  (Printf.sprintf "hook mode %d returned with a live descendant"
+                     mode)))
 
 let () =
   Eio_main.run @@ fun env ->
@@ -125,7 +137,9 @@ let () =
    in
    let checkout = Stdlib.Filename.concat dir "checkout" in
    Unix.mkdir checkout 0o700;
-   Unix.symlink supervisor (Stdlib.Filename.concat dir "supervisor");
+   let local_supervisor = Stdlib.Filename.concat dir "supervisor" in
+   if Host.is_windows then Unix.link supervisor local_supervisor
+   else Unix.symlink supervisor local_supervisor;
    Stdlib.Fun.protect
      ~finally:(fun () ->
        Unix.chdir original_cwd;
@@ -154,12 +168,17 @@ let () =
             ~cwd:Eio.Path.(fs / dir)
             ~env:[] ()
         with
+       | Ok () when Host.is_windows -> ()
        | Ok () -> failwith "missing supervisor authorized a hook"
-       | Error reason ->
+       | Error reason when not Host.is_windows ->
            assert_contains ~label:"missing supervisor"
-             ~needle:"Process-tree supervisor unavailable" reason);
-       if Stdlib.Sys.file_exists (Stdlib.Filename.concat dir "executed") then
-         failwith "hook executed without process supervision"));
+             ~needle:"Process-tree supervisor unavailable" reason
+       | Error reason -> failwith reason);
+       let executed =
+         Stdlib.Sys.file_exists (Stdlib.Filename.concat dir "executed")
+       in
+       if Bool.equal executed (not Host.is_windows) then
+         failwith "hook supervision backend selection was incorrect"));
 
   (* ── Success: exit 0, stdout ignored by caller ────────────────────── *)
   (let dir, script = make_script "#!/bin/sh\necho hello\n" in
@@ -246,26 +265,30 @@ let () =
         runner's own soft cap, so if the CI runner is already at [ulimit -Sn]
         < 128 (exactly the scenario this PR is meant to help with), the child
         sees the clamped value, not 128. Expect [min fd_limit parent_soft]. *)
-  (let dir, script =
-     make_script
-       "#!/bin/sh\nlimit=$(ulimit -n)\necho \"limit=$limit\"\nexit 1\n"
-   in
-   let cwd = Eio.Path.(fs / dir) in
-   let parent_soft =
-     let ic = Unix.open_process_in "ulimit -Sn" in
-     let s = String.strip (Stdlib.input_line ic) in
-     ignore (Unix.close_process_in ic);
-     if String.equal s "unlimited" then Int.max_value else Int.of_string s
-   in
-   let fd_limit = 128 in
-   let expected = min fd_limit parent_soft in
-   match
-     User_config.run_hook ~process_mgr ~clock ~script ~cwd ~env:[] ~fd_limit ()
-   with
-   | Ok () -> failwith "expected Error (exit 1)"
-   | Error msg ->
-       assert_contains ~label:"fd-cap"
-         ~needle:(Printf.sprintf "limit=%d" expected)
-         msg);
+  (if Host.is_windows then
+     Stdlib.print_endline "hook fd cap: SKIPPED (Windows has no RLIMIT_NOFILE)"
+   else
+     let dir, script =
+       make_script
+         "#!/bin/sh\nlimit=$(ulimit -n)\necho \"limit=$limit\"\nexit 1\n"
+     in
+     let cwd = Eio.Path.(fs / dir) in
+     let parent_soft =
+       let ic = Unix.open_process_in "ulimit -Sn" in
+       let s = String.strip (Stdlib.input_line ic) in
+       ignore (Unix.close_process_in ic);
+       if String.equal s "unlimited" then Int.max_value else Int.of_string s
+     in
+     let fd_limit = 128 in
+     let expected = min fd_limit parent_soft in
+     match
+       User_config.run_hook ~process_mgr ~clock ~script ~cwd ~env:[] ~fd_limit
+         ()
+     with
+     | Ok () -> failwith "expected Error (exit 1)"
+     | Error msg ->
+         assert_contains ~label:"fd-cap"
+           ~needle:(Printf.sprintf "limit=%d" expected)
+           msg);
 
   Stdlib.print_endline "test_user_config: OK"

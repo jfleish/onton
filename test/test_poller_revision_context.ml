@@ -529,13 +529,24 @@ let concurrent_confirmations env =
           let old_path = Sys.getenv "PATH" in
           let old_data = Sys.getenv_opt "ONTON_DATA_DIR" in
           let real_git =
-            let channel = Unix.open_process_in "command -v git" in
-            Fun.protect
-              ~finally:(fun () -> ignore (Unix.close_process_in channel))
-              (fun () -> input_line channel)
+            String.split_on_char (if Host.is_windows then ';' else ':') old_path
+            |> List.map (fun directory ->
+                Filename.concat directory
+                  (if Host.is_windows then "git.exe" else "git"))
+            |> List.find (fun candidate ->
+                try
+                  Unix.access candidate [ Unix.X_OK ];
+                  not (Sys.is_directory candidate)
+                with Unix.Unix_error _ | Sys_error _ -> false)
+            |> Unix.realpath
           in
           let path name = Filename.concat dir name in
           let wrapper = path "git" in
+          let shell_path value =
+            if Host.is_windows then
+              String.map (fun c -> if Char.equal c '\\' then '/' else c) value
+            else value
+          in
           Out_channel.with_open_bin wrapper (fun out ->
               Printf.fprintf out
                 "#!/bin/sh\n\
@@ -551,10 +562,12 @@ let concurrent_confirmations env =
                 \ ;;\n\
                  esac\n\
                  exec %s \"$@\"\n"
-                (Filename.quote dir) (Filename.quote dir)
-                (Filename.quote real_git));
+                (Filename.quote (shell_path dir))
+                (Filename.quote (shell_path dir))
+                (Filename.quote (shell_path real_git)));
           Unix.chmod wrapper 0o755;
-          Unix.putenv "PATH" (dir ^ ":" ^ old_path);
+          Unix.putenv "PATH"
+            (dir ^ (if Host.is_windows then ";" else ":") ^ old_path);
           Unix.putenv "ONTON_DATA_DIR" (path "state");
           Fun.protect
             ~finally:(fun () ->

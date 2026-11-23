@@ -22,7 +22,8 @@ let worktree_dir ~project_name ~patch_id =
   let home = Host.home_dir_or_cwd () in
   let id_str = Types.Patch_id.to_string patch_id in
   Stdlib.Filename.concat
-    (Stdlib.Filename.concat home (Stdlib.Filename.concat "worktrees" project_name))
+    (Stdlib.Filename.concat home
+       (Stdlib.Filename.concat "worktrees" project_name))
     ("patch-" ^ id_str)
 
 let has_cancellation = Process_tree.has_cancellation

@@ -148,16 +148,21 @@ let test_clean_env_scrubs_git_and_installs_auth () =
         (not (List.exists (binding "GIT_DIR") github_env));
       assert_true "inherited Git config cannot re-enable hooks"
         (value "GIT_CONFIG_COUNT" github_env
-         = Some (if Host.is_windows then "2" else "1")
+         = Some (if Host.is_windows then "3" else "1")
         && value "GIT_CONFIG_KEY_0" github_env = Some "core.hooksPath"
         && value "GIT_CONFIG_VALUE_0" github_env = Some Host.null_device);
-      if Host.is_windows then
+      if Host.is_windows then (
         assert_true "Windows Git long paths enabled"
           (value "GIT_CONFIG_KEY_1" github_env = Some "core.longpaths"
           && value "GIT_CONFIG_VALUE_1" github_env = Some "true");
+        assert_true "Windows graft warning disabled"
+          (value "GIT_CONFIG_KEY_2" github_env
+           = Some "advice.graftFileDeprecated"
+          && value "GIT_CONFIG_VALUE_2" github_env = Some "false"));
       assert_true "Git observes actual objects and ancestry"
         (value "GIT_NO_REPLACE_OBJECTS" github_env = Some "1"
-        && value "GIT_GRAFT_FILE" github_env = Some "");
+        && value "GIT_GRAFT_FILE" github_env
+           = Some (if Host.is_windows then Host.null_device else ""));
       assert_true "stale GH_TOKEN scrubbed"
         (not (List.exists (binding "GH_TOKEN") github_env));
       assert_true "terminal prompts disabled"

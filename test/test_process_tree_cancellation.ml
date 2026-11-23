@@ -534,28 +534,70 @@ let modes =
     "clone";
   ]
 
+let synchronous_capture_windows () =
+  let executable = Stdlib.Sys.executable_name in
+  let run ?timeout mode =
+    Process_tree.run_sync ?timeout ~env:(Unix.environment ())
+      [ executable; mode ]
+  in
+  let status, stdout, stderr = run "--capture-child" in
+  check "synchronous capture retains exit status" (status = Unix.WEXITED 23);
+  check "both full pipes are drained without truncation"
+    (String.length stdout = 262144 && String.length stderr = 262144);
+  let status, stdout, _ = run "--stdin-child" in
+  check "synchronous commands receive stdin EOF"
+    (status = Unix.WEXITED 0 && stdout = "stdin-closed");
+  let started = Unix.gettimeofday () in
+  let status, _, stderr = run ~timeout:0.2 "--sleep-child" in
+  check "synchronous command deadline terminates and reaps"
+    (status = Unix.WEXITED 124);
+  check "deadline retains diagnostics"
+    (Base.String.is_substring stderr ~substring:"timed out");
+  check "deadline is bounded even without output"
+    (Unix.gettimeofday () -. started < 6.)
+
 let () =
-  if Array.length Sys.argv = 3 then (
-    if Sys.argv.(1) = "--test-parent" then (
-      Eio_main.run (fun env -> parent_death env Sys.argv.(2));
-      exit 0);
-    List.iter
-      (fun mode ->
-        if Sys.argv.(1) = "--crash-" ^ mode ^ "-client" then (
-          with_writer (fun () ->
-              Eio_main.run (fun env -> run_crash_client env mode Sys.argv.(2)));
-          exit 0))
-      modes);
-  synchronous_capture ();
-  Eio_main.run (fun env ->
-      native_status env;
-      missing_default env;
-      stale_parent env;
-      List.iter (parent_death env) modes;
-      List.iter
-        (fun streaming -> List.iter (scenario env ~streaming) [ true; false ])
-        [ true; false ];
-      List.iter (exited_leader env) [ 0; 23 ];
-      short_commands env);
-  print_endline
-    "process-tree graceful cleanup, orphan reaping and rapid exits: OK"
+  if Array.length Sys.argv = 2 then
+    match Sys.argv.(1) with
+    | "--capture-child" ->
+        output_string stdout (String.make 262144 'o');
+        output_string stderr (String.make 262144 'e');
+        flush stdout;
+        flush stderr;
+        exit 23
+    | "--stdin-child" ->
+        ignore (In_channel.input_all stdin);
+        print_string "stdin-closed";
+        exit 0
+    | "--sleep-child" ->
+        Unix.sleep 30;
+        exit 0
+    | _ ->
+        ();
+        if Array.length Sys.argv = 3 then (
+          if Sys.argv.(1) = "--test-parent" then (
+            Eio_main.run (fun env -> parent_death env Sys.argv.(2));
+            exit 0);
+          List.iter
+            (fun mode ->
+              if Sys.argv.(1) = "--crash-" ^ mode ^ "-client" then (
+                with_writer (fun () ->
+                    Eio_main.run (fun env ->
+                        run_crash_client env mode Sys.argv.(2)));
+                exit 0))
+            modes);
+        if Host.is_windows then synchronous_capture_windows ()
+        else synchronous_capture ();
+        Eio_main.run (fun env ->
+            if not Host.is_windows then native_status env;
+            missing_default env;
+            stale_parent env;
+            List.iter (parent_death env) modes;
+            List.iter
+              (fun streaming ->
+                List.iter (scenario env ~streaming) [ true; false ])
+              [ true; false ];
+            List.iter (exited_leader env) [ 0; 23 ];
+            short_commands env);
+        print_endline
+          "process-tree graceful cleanup, orphan reaping and rapid exits: OK"

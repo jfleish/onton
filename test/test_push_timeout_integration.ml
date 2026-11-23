@@ -9,7 +9,7 @@ module B = Branch_reconcile
 module E = Branch_reconcile_executor
 
 let write_script path contents =
-  let oc = Stdlib.open_out path in
+  let oc = Stdlib.open_out_bin path in
   Stdlib.Fun.protect
     ~finally:(fun () -> Stdlib.close_out oc)
     (fun () -> Stdlib.output_string oc ("#!/bin/sh\nset -eu\n" ^ contents));
@@ -121,16 +121,29 @@ let scenario env stage =
   in
   let marker = Stdlib.Filename.concat repo ".git/blocked.pid" in
   let push_started = Stdlib.Filename.concat repo ".git/push-started" in
+  let shell_path path =
+    if Host.is_windows then
+      String.map path ~f:(fun c -> if Char.equal c '\\' then '/' else c)
+    else path
+  in
+  let shell_command path =
+    if Host.is_windows then "sh " ^ Stdlib.Filename.quote (shell_path path)
+    else path
+  in
   let block =
-    Printf.sprintf "echo $$ > %s.tmp\nmv %s.tmp %s\nexec sleep 30\n"
-      (Stdlib.Filename.quote marker)
-      (Stdlib.Filename.quote marker)
-      (Stdlib.Filename.quote marker)
+    Printf.sprintf
+      "if [ -r /proc/$$/winpid ]; then cat /proc/$$/winpid; else echo $$; fi > \
+       %s.tmp\n\
+       mv %s.tmp %s\n\
+       exec sleep 30\n"
+      (Stdlib.Filename.quote (shell_path marker))
+      (Stdlib.Filename.quote (shell_path marker))
+      (Stdlib.Filename.quote (shell_path marker))
   in
   let receive_pack = Stdlib.Filename.concat repo ".git/timeout-receive-pack" in
   write_script receive_pack
     (Printf.sprintf "touch %s\n%s\nexec git-receive-pack \"$@\"\n"
-       (Stdlib.Filename.quote push_started)
+       (Stdlib.Filename.quote (shell_path push_started))
        (if String.equal stage "push" then block else ""));
   git [ "config"; "remote.origin.receivepack"; receive_pack ];
   let upload_pack = Stdlib.Filename.concat repo ".git/timeout-upload-pack" in
@@ -164,9 +177,15 @@ let scenario env stage =
                        (if String.equal stage "observation" then "ls-remote"
                         else "fetch")
                      && not (String.equal stage "push") ->
-                  real.git (command :: ("--upload-pack=" ^ upload_pack) :: rest)
+                  real.git
+                    (command
+                    :: ("--upload-pack=" ^ shell_command upload_pack)
+                    :: rest)
               | "push" :: rest when String.equal stage "push" ->
-                  real.git ("push" :: ("--receive-pack=" ^ receive_pack) :: rest)
+                  real.git
+                    ("push"
+                    :: ("--receive-pack=" ^ shell_command receive_pack)
+                    :: rest)
               | _ -> real.git args
             in
             let code, _, stderr = result in
@@ -224,17 +243,14 @@ let scenario env stage =
       in
       Option.iter pid ~f:(fun pid ->
           Eio.Cancel.protect (fun () ->
-              (try Unix.kill pid Stdlib.Sys.sigkill
-               with Unix.Unix_error (Unix.ESRCH, _, _) -> ());
-              let still_exists () =
-                match Unix.kill pid 0 with
-                | () -> true
-                | exception Unix.Unix_error (Unix.ESRCH, _, _) -> false
-              in
+              (if Host.is_windows then Host.stop_process pid
+               else
+                 try Unix.kill pid Stdlib.Sys.sigkill
+                 with Unix.Unix_error (Unix.ESRCH, _, _) -> ());
               let clock = Eio.Stdenv.clock env in
               match
                 Eio.Time.with_timeout clock 5.0 (fun () ->
-                    while still_exists () do
+                    while Host.process_alive pid do
                       Eio.Time.sleep clock 0.01
                     done;
                     Ok ())

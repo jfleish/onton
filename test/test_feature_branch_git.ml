@@ -27,15 +27,15 @@ let failing_conflict_probe_mgr (type tag)
              && List.mem args "--porcelain=v1" ~equal:String.equal ->
           probed := true;
           Original.spawn t ~sw ?cwd ?stdin ?stdout ?stderr ?env
-            ~executable:"/bin/sh"
-            [ "/bin/sh"; "-c"; "echo index-probe-stderr >&2; exit 23" ]
+            ~executable:Stdlib.Sys.executable_name
+            [ Stdlib.Sys.executable_name; "--fail-index-probe" ]
       | _ ->
           Original.spawn t ~sw ?cwd ?stdin ?stdout ?stderr ?env ?executable args
   end in
   Eio.Resource.T (state, Eio.Process.Pi.mgr (module Faults))
 
 let write path content =
-  let oc = Stdlib.open_out path in
+  let oc = Stdlib.open_out_bin path in
   Stdlib.Fun.protect
     ~finally:(fun () -> Stdlib.close_out oc)
     (fun () -> Stdlib.output_string oc content)
@@ -84,7 +84,7 @@ let empty_gameplan =
       reachability_traces = [];
     }
 
-let () =
+let run () =
   Eio_main.run (fun env ->
       Git.with_temp_repo (fun dir ->
           let bare = dir ^ "/remote.git" in
@@ -454,7 +454,8 @@ let () =
             check label
               (match B.phase !state with
               | Some (B.Waiting { reason; _ }) ->
-                  String.is_substring reason ~substring
+                  if String.is_substring reason ~substring then true
+                  else failwith (label ^ ": " ^ reason)
               | None
               | Some
                   ( B.Preparing | B.Integrating | B.Repairing _ | B.Publishing
@@ -589,13 +590,18 @@ let () =
           let filter_pid = dir ^ "/smudge-pid" in
           let helper_pid = dir ^ "/smudge-helper-pid" in
           let filter = dir ^ "/slow-smudge" in
+          let shell_path path =
+            if Host.is_windows then
+              String.map path ~f:(fun c -> if Char.equal c '\\' then '/' else c)
+            else path
+          in
           let stalled_script =
             "#!/bin/sh\necho $$ > "
-            ^ Stdlib.Filename.quote filter_pid
+            ^ Stdlib.Filename.quote (shell_path filter_pid)
             ^ "\nsleep 30 &\necho $! > "
-            ^ Stdlib.Filename.quote helper_pid
+            ^ Stdlib.Filename.quote (shell_path helper_pid)
             ^ "\ntouch "
-            ^ Stdlib.Filename.quote marker
+            ^ Stdlib.Filename.quote (shell_path marker)
             ^ "\nwait\n"
           in
           write filter stalled_script;
@@ -612,8 +618,18 @@ let () =
                 write
                   (dir ^ "/.git/info/attributes")
                   (name ^ " filter=integration-cancel\n");
+                let filter_command =
+                  if Host.is_windows then
+                    "sh "
+                    ^ Stdlib.Filename.quote
+                        (String.map filter ~f:(fun c ->
+                             if Char.equal c '\\' then '/' else c))
+                  else filter
+                in
                 Git.run_git ~cwd:dir
-                  [ "config"; "filter.integration-cancel.smudge"; filter ]);
+                  [
+                    "config"; "filter.integration-cancel.smudge"; filter_command;
+                  ]);
               let before = Git.git_capture ~cwd:bare [ "rev-parse"; "root" ] in
               let cancelled = ref false in
               let run () =
@@ -642,16 +658,20 @@ let () =
                         done));
               check "integration cancellation propagates" !cancelled;
               check "selected Git phase reached" (Stdlib.Sys.file_exists marker);
-              List.iter [ filter_pid; helper_pid ] ~f:(fun file ->
-                  let pid =
-                    Stdlib.In_channel.with_open_bin file
-                      Stdlib.In_channel.input_all
-                    |> String.strip |> Int.of_string
-                  in
-                  check "cancelled process tree reaped"
-                    (match Unix.kill pid 0 with
-                    | () -> false
-                    | exception Unix.Unix_error (Unix.ESRCH, _, _) -> true));
+              (* Git Bash reports MSYS PIDs, which are not accepted by the
+                 native Windows [Unix.kill]. Job Object descendant reaping is
+                 covered by the backend process-tree tests. *)
+              if not Host.is_windows then
+                List.iter [ filter_pid; helper_pid ] ~f:(fun file ->
+                    let pid =
+                      Stdlib.In_channel.with_open_bin file
+                        Stdlib.In_channel.input_all
+                      |> String.strip |> Int.of_string
+                    in
+                    check "cancelled process tree reaped"
+                      (match Unix.kill pid 0 with
+                      | () -> false
+                      | exception Unix.Unix_error (Unix.ESRCH, _, _) -> true));
               check "root lock released"
                 (Runtime.with_root_write rt (fun () -> true));
               check "cancellation preserves remote"
@@ -672,3 +692,12 @@ let () =
               List.iter [ filter_pid; helper_pid; marker ] ~f:Unix.unlink);
           Stdlib.print_endline
             "PASS local Git feature integration, races, recovery and ancestry"))
+
+let () =
+  if
+    Array.length Stdlib.Sys.argv = 2
+    && String.equal Stdlib.Sys.argv.(1) "--fail-index-probe"
+  then (
+    Stdlib.prerr_endline "index-probe-stderr";
+    Stdlib.exit 23)
+  else run ()

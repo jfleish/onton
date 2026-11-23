@@ -13,7 +13,7 @@ let sha text =
   match B.Commit.make text with Some v -> v | None -> assert false
 
 let commit dir file message =
-  let oc = open_out (Filename.concat dir file) in
+  let oc = open_out_bin (Filename.concat dir file) in
   output_string oc (file ^ "\n");
   close_out oc;
   Git.run_git ~cwd:dir [ "add"; file ];
@@ -276,14 +276,16 @@ let deep_stack env empty_tip =
                  (fun subject ->
                    let channel =
                      open_out_gen
-                       [ Open_creat; Open_append; Open_text ]
+                       [ Open_creat; Open_append; Open_binary ]
                        0o600 path
                    in
                    output_string channel (subject ^ "\n");
                    close_out channel;
                    Git.run_git ~cwd:dir [ "add"; "stack" ];
                    if index = 1 then (
-                     let channel = open_out (Filename.concat dir "conflict") in
+                     let channel =
+                       open_out_bin (Filename.concat dir "conflict")
+                     in
                      output_string channel (subject ^ "\n");
                      close_out channel;
                      Git.run_git ~cwd:dir [ "add"; "conflict" ]);
@@ -363,7 +365,7 @@ let deep_stack env empty_tip =
                             in
                             incr repairs;
                             let channel =
-                              open_out (Filename.concat dir "conflict")
+                              open_out_bin (Filename.concat dir "conflict")
                             in
                             output_string channel
                               (if !repairs = 1 then "upstream\nresolved one\n"
@@ -386,7 +388,7 @@ let deep_stack env empty_tip =
                             then (
                               incr repairs;
                               let channel =
-                                open_out (Filename.concat dir "conflict")
+                                open_out_bin (Filename.concat dir "conflict")
                               in
                               output_string channel
                                 "upstream\nresolved one\nresolved two\n";
@@ -471,7 +473,7 @@ let deep_stack env empty_tip =
                        line)
                    equivalence);
             if merged = 0 then (
-              let channel = open_out (Filename.concat remote "conflict") in
+              let channel = open_out_bin (Filename.concat remote "conflict") in
               output_string channel "upstream\n";
               close_out channel;
               Git.run_git ~cwd:remote [ "add"; "conflict" ];

@@ -233,7 +233,10 @@ let disconnect ?(timeout = 5.) a =
   else if (not (Float.is_finite timeout)) || Float.(timeout <= 0.) then
     Error "invalid supervisor teardown timeout"
   else (
-    Host.stop_process (Host.spawned_pid a.pid);
+    (* POSIX supervisors handle SIGTERM and acknowledge tree teardown. Windows
+       termination is not catchable, so first let closing the stream end the
+       helper naturally and allow its Job Object supervisor to acknowledge. *)
+    if not Host.is_windows then Host.stop_process (Host.spawned_pid a.pid);
     let rec await attempts =
       match Unix.waitpid [ Unix.WNOHANG ] a.pid with
       | pid, Unix.WEXITED 0 when pid = a.pid ->
@@ -254,7 +257,15 @@ let disconnect ?(timeout = 5.) a =
            ^ detail ^ ")")
       | 0, (Unix.WEXITED _ | Unix.WSIGNALED _ | Unix.WSTOPPED _)
         when attempts <= 0 ->
-          Error "worker supervisor teardown timed out; attachment retained"
+          if Host.is_windows then (
+            (* Terminating the Windows supervisor closes its kill-on-close Job
+               Object in the kernel, synchronously terminating descendants. *)
+            Host.stop_process (Host.spawned_pid a.pid);
+            ignore (Unix.waitpid [] a.pid);
+            a.reaped <- true;
+            a.teardown_confirmed <- true;
+            Ok ())
+          else Error "worker supervisor teardown timed out; attachment retained"
       | 0, (Unix.WEXITED _ | Unix.WSIGNALED _ | Unix.WSTOPPED _) ->
           Unix.sleepf 0.01;
           await (attempts - 1)

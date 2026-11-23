@@ -19,27 +19,21 @@ module E = Branch_reconcile_executor
     [commit_file] to read back the new commit's SHA). The env is scrubbed via
     {!Git_env.clean_env} so tests are unaffected when run inside a git hook
     (which would otherwise leak [GIT_DIR] / [GIT_WORK_TREE]). *)
-let run_git ~process_mgr ~dir args =
-  let stdout_buf = Buffer.create 64 in
-  let stderr_buf = Buffer.create 64 in
-  Eio.Switch.run (fun sw ->
-      let env = Git_env.clean_env () in
-      let child =
-        Eio.Process.spawn ~sw process_mgr ~env
-          ~stdout:(Eio.Flow.buffer_sink stdout_buf)
-          ~stderr:(Eio.Flow.buffer_sink stderr_buf)
-          ([ "git"; "-C"; dir ] @ args)
-      in
-      match Eio.Process.await child with
-      | `Exited 0 -> ()
-      | `Exited n ->
-          failwith
-            (Printf.sprintf "git %s failed (exit %d): %s"
-               (String.concat ~sep:" " args)
-               n
-               (Buffer.contents stderr_buf))
-      | `Signaled s -> failwith (Printf.sprintf "git signaled %d" s));
-  String.strip (Buffer.contents stdout_buf)
+let run_git ~process_mgr:_ ~dir args =
+  let status, stdout, stderr =
+    Process_tree.run_sync ~env:(Git_env.clean_env ())
+      ([ "git"; "-C"; dir ] @ args)
+  in
+  (match status with
+  | Unix.WEXITED 0 -> ()
+  | Unix.WEXITED n ->
+      failwith
+        (Printf.sprintf "git %s failed (exit %d): %s"
+           (String.concat ~sep:" " args)
+           n stderr)
+  | Unix.WSIGNALED signal | Unix.WSTOPPED signal ->
+      failwith (Printf.sprintf "git signaled %d" signal));
+  String.strip stdout
 
 (* Record actual branch creation, just as production materialization does.
    Integration fixtures must not infer ownership later from a merge base. *)

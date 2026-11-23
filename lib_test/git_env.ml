@@ -240,6 +240,7 @@ let init_repo dir =
   run_git ~cwd:dir [ "config"; "user.email"; "test@example.com" ];
   run_git ~cwd:dir [ "config"; "user.name"; "test" ];
   run_git ~cwd:dir [ "config"; "commit.gpgsign"; "false" ];
+  run_git ~cwd:dir [ "config"; "core.autocrlf"; "false" ];
   run_git ~cwd:dir [ "config"; "rerere.enabled"; "false" ];
   run_git ~cwd:dir [ "config"; "rerere.autoupdate"; "false" ]
 

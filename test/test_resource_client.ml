@@ -225,87 +225,93 @@ let () =
           check
             (Result.is_ok (Onton.Resource_client.disconnect attachment))
             "supervisor teardown acknowledgment";
-          let rec gone attempts =
-            try
-              Unix.kill child 0;
-              if attempts <= 0 then false
-              else (
-                Unix.sleepf 0.01;
-                gone (attempts - 1))
-            with Unix.Unix_error (Unix.ESRCH, _, _) -> true
-          in
-          check (gone 200) "descendant survived confirmed teardown");
-  let crash_script = Filename.temp_file "onton-resource-crash" ".sh" in
-  let crash_file = Filename.temp_file "onton-resource-crash-child" ".pid" in
-  let reaped_file =
-    Filename.temp_file "onton-resource-crash-reaped" ".marker"
-  in
-  let child_pid = ref None in
-  let wait_reaped attempts =
-    let rec loop attempts =
-      if Sys.file_exists reaped_file then true
-      else if attempts <= 0 then false
-      else (
-        Unix.sleepf 0.01;
-        loop (attempts - 1))
-    in
-    loop attempts
-  in
-  let stop_and_wait pid =
-    (try Unix.kill pid Sys.sigkill
-     with Unix.Unix_error (Unix.ESRCH, _, _) -> ());
-    if not (wait_reaped 500) then
-      failwith "crash fixture child was not reaped by its surviving parent"
-  in
-  Fun.protect
-    ~finally:(fun () ->
-      Option.iter stop_and_wait !child_pid;
-      (try Sys.remove crash_script with _ -> ());
-      (try Sys.remove crash_file with _ -> ());
-      try Sys.remove reaped_file with _ -> ())
-    (fun () ->
-      Sys.remove crash_file;
-      Sys.remove reaped_file;
-      let out = open_out_bin crash_script in
-      output_string out
-        ("#!/bin/sh\nsleep 60 &\nchild=$!\nprintf '%s\\n' \"$child\" > "
-       ^ Filename.quote crash_file
-       ^ "\nkill -KILL \"$PPID\"\nwait \"$child\"\nprintf reaped > "
-       ^ Filename.quote reaped_file ^ "\n");
-      close_out out;
-      Unix.chmod crash_script 0o700;
-      let client =
-        Onton.Resource_client.create ~helper:crash_script
-          ~transport:Onton.Resource_client.subprocess
-      in
-      match
-        Onton.Resource_client.connect client ~run_id:"r" ~coordinator_id:"c"
-          ~owner_epoch:0L ~revision:0L ~request_id:"crash" ~resource_id:"crash"
-      with
-      | Error reason -> failwith reason
-      | Ok attachment ->
-          let rec read_pid attempts =
-            if attempts <= 0 then failwith "crash fixture did not start";
-            try
-              let input = open_in crash_file in
-              let pid =
-                Fun.protect
-                  ~finally:(fun () -> close_in_noerr input)
-                  (fun () -> int_of_string (input_line input))
-              in
-              child_pid := Some pid;
-              pid
-            with Sys_error _ | End_of_file | Failure _ ->
-              Unix.sleepf 0.01;
-              read_pid (attempts - 1)
-          in
-          let child = read_pid 200 in
-          check
-            (Result.is_error (Onton.Resource_client.disconnect attachment))
-            "abnormal supervisor exit must not confirm teardown";
-          check
-            (Result.is_error (Onton.Resource_client.disconnect attachment))
-            "unconfirmed teardown must remain fenced on replay";
-          stop_and_wait child;
-          print_endline "  crash fixture child reaped by surviving shell");
+          if not Onton.Host.is_windows then
+            let rec gone attempts =
+              try
+                Unix.kill child 0;
+                if attempts <= 0 then false
+                else (
+                  Unix.sleepf 0.01;
+                  gone (attempts - 1))
+              with Unix.Unix_error (Unix.ESRCH, _, _) -> true
+            in
+            check (gone 200) "descendant survived confirmed teardown");
+  (if Onton.Host.is_windows then
+     print_endline
+       "  crash-parent subreaper fixture: SKIPPED (Windows uses Job Objects)"
+   else
+     let crash_script = Filename.temp_file "onton-resource-crash" ".sh" in
+     let crash_file = Filename.temp_file "onton-resource-crash-child" ".pid" in
+     let reaped_file =
+       Filename.temp_file "onton-resource-crash-reaped" ".marker"
+     in
+     let child_pid = ref None in
+     let wait_reaped attempts =
+       let rec loop attempts =
+         if Sys.file_exists reaped_file then true
+         else if attempts <= 0 then false
+         else (
+           Unix.sleepf 0.01;
+           loop (attempts - 1))
+       in
+       loop attempts
+     in
+     let stop_and_wait pid =
+       (try Unix.kill pid Sys.sigkill
+        with Unix.Unix_error (Unix.ESRCH, _, _) -> ());
+       if not (wait_reaped 500) then
+         failwith "crash fixture child was not reaped by its surviving parent"
+     in
+     Fun.protect
+       ~finally:(fun () ->
+         Option.iter stop_and_wait !child_pid;
+         (try Sys.remove crash_script with _ -> ());
+         (try Sys.remove crash_file with _ -> ());
+         try Sys.remove reaped_file with _ -> ())
+       (fun () ->
+         Sys.remove crash_file;
+         Sys.remove reaped_file;
+         let out = open_out_bin crash_script in
+         output_string out
+           ("#!/bin/sh\nsleep 60 &\nchild=$!\nprintf '%s\\n' \"$child\" > "
+          ^ Filename.quote crash_file
+          ^ "\nkill -KILL \"$PPID\"\nwait \"$child\"\nprintf reaped > "
+          ^ Filename.quote reaped_file ^ "\n");
+         close_out out;
+         Unix.chmod crash_script 0o700;
+         let client =
+           Onton.Resource_client.create ~helper:crash_script
+             ~transport:Onton.Resource_client.subprocess
+         in
+         match
+           Onton.Resource_client.connect client ~run_id:"r" ~coordinator_id:"c"
+             ~owner_epoch:0L ~revision:0L ~request_id:"crash"
+             ~resource_id:"crash"
+         with
+         | Error reason -> failwith reason
+         | Ok attachment ->
+             let rec read_pid attempts =
+               if attempts <= 0 then failwith "crash fixture did not start";
+               try
+                 let input = open_in crash_file in
+                 let pid =
+                   Fun.protect
+                     ~finally:(fun () -> close_in_noerr input)
+                     (fun () -> int_of_string (input_line input))
+                 in
+                 child_pid := Some pid;
+                 pid
+               with Sys_error _ | End_of_file | Failure _ ->
+                 Unix.sleepf 0.01;
+                 read_pid (attempts - 1)
+             in
+             let child = read_pid 200 in
+             check
+               (Result.is_error (Onton.Resource_client.disconnect attachment))
+               "abnormal supervisor exit must not confirm teardown";
+             check
+               (Result.is_error (Onton.Resource_client.disconnect attachment))
+               "unconfirmed teardown must remain fenced on replay";
+             stop_and_wait child;
+             print_endline "  crash fixture child reaped by surviving shell"));
   print_endline "resource client public helper passed"

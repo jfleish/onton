@@ -90,25 +90,18 @@ let () =
                   "../bin/main.exe"
               in
               let invoke args =
-                let output = Buffer.create 256 in
                 let result =
                   Eio.Time.with_timeout (Eio.Stdenv.clock env) 5. (fun () ->
-                      let code =
-                        Eio.Switch.run (fun sw ->
-                            let child =
-                              Eio.Process.spawn ~sw
-                                (Eio.Stdenv.process_mgr env)
-                                ~env:(Git.clean_env ())
-                                ~stdin:(Eio.Flow.string_source "")
-                                ~stdout:(Eio.Flow.buffer_sink output)
-                                ~stderr:(Eio.Flow.buffer_sink output)
-                                (executable :: args)
-                            in
-                            match Eio.Process.await child with
-                            | `Exited c -> c
-                            | `Signaled _ -> 128)
+                      let status, stdout, stderr =
+                        Process_tree.run_status
+                          ~process_mgr:(Eio.Stdenv.process_mgr env)
+                          ~clock:(Eio.Stdenv.clock env) ~env:(Git.clean_env ())
+                          (executable :: args)
                       in
-                      Ok (code, Buffer.contents output))
+                      let code =
+                        match status with `Exited c -> c | `Signaled _ -> 128
+                      in
+                      Ok (code, stdout ^ stderr))
                 in
                 match result with
                 | Ok v -> v

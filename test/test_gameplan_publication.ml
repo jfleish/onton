@@ -731,7 +731,11 @@ let () =
           commit env ~yaml:true ~content:source;
           commit env ~yaml:false
             ~content:"{\n  \"preserve\": \"formatting\"\n}\n";
-          refuses_symlink env ();
+          if Host.is_windows then
+            print_endline
+              "gameplan symlink refusal: SKIPPED (Windows symlinks require \
+               Developer Mode)"
+          else refuses_symlink env ();
           runner_without_backend env ~feature:false ~retry:false;
           runner_without_backend env ~feature:true ~retry:false;
           runner_without_backend env ~feature:false ~retry:true;

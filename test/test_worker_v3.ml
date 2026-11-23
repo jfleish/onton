@@ -166,7 +166,8 @@ let () =
     Array.of_list
       ([
          "HOME=" ^ root;
-         "PATH=" ^ fake_bin ^ ":"
+         "PATH=" ^ fake_bin
+         ^ (if Host.is_windows then ";" else ":")
          ^ Option.value (Sys.getenv_opt "PATH") ~default:"";
          "ONTON_FAKE_PROMPT=" ^ prompt_log;
          "ONTON_DATA_DIR=" ^ Filename.concat root "data";
@@ -174,23 +175,23 @@ let () =
       @ env)
   in
   let command =
-    String.concat " "
-      (List.map Filename.quote
-         [
-           binary;
-           "--gameplan";
-           gameplan;
-           "--repo-root";
-           managed;
-           "--project-name";
-           "v3-test";
-           "--protocol-version";
-           "3";
-           "--ack-timeout";
-           "3";
-         ])
+    [|
+      binary;
+      "--gameplan";
+      gameplan;
+      "--repo-root";
+      managed;
+      "--project-name";
+      "v3-test";
+      "--protocol-version";
+      "3";
+      "--ack-timeout";
+      "3";
+    |]
   in
-  let bad_output, bad_input, bad_errors = Unix.open_process_full command env in
+  let bad_output, bad_input, bad_errors =
+    Unix.open_process_args_full binary command env
+  in
   let bad_bind =
     frame "bind"
       [
@@ -217,7 +218,7 @@ let () =
   ignore (Unix.close_process_full (bad_output, bad_input, bad_errors));
   check "gameplan-incompatible bind does not invoke backend"
     (not (Sys.file_exists prompt_log));
-  let output, input, errors = Unix.open_process_full command env in
+  let output, input, errors = Unix.open_process_args_full binary command env in
   let host = ref (V.initial ()) in
   let capsule = ref "{}" and version = ref 0L in
   let bind_context =
@@ -499,24 +500,22 @@ let () =
   Onton_test_support.Git_env.run_git ~cwd:fresh
     [ "config"; "user.email"; "replacement@example.invalid" ];
   let replacement_command =
-    String.concat " "
-      (List.map Filename.quote
-         [
-           binary;
-           "--gameplan";
-           gameplan;
-           "--repo-root";
-           fresh;
-           "--project-name";
-           "v3-test";
-           "--protocol-version";
-           "3";
-           "--ack-timeout";
-           "3";
-         ])
+    [|
+      binary;
+      "--gameplan";
+      gameplan;
+      "--repo-root";
+      fresh;
+      "--project-name";
+      "v3-test";
+      "--protocol-version";
+      "3";
+      "--ack-timeout";
+      "3";
+    |]
   in
   let replacement_output, replacement_input, replacement_errors =
-    Unix.open_process_full replacement_command env
+    Unix.open_process_args_full binary replacement_command env
   in
   let replacement_host = ref (V.initial ()) in
   let replacement_bind =
@@ -632,24 +631,22 @@ let () =
   Onton_test_support.Git_env.run_git ~cwd:root_clone
     [ "config"; "user.email"; "root@example.invalid" ];
   let root_command =
-    String.concat " "
-      (List.map Filename.quote
-         [
-           binary;
-           "--gameplan";
-           gameplan;
-           "--repo-root";
-           root_clone;
-           "--project-name";
-           "v3-test-root";
-           "--protocol-version";
-           "3";
-           "--ack-timeout";
-           "3";
-         ])
+    [|
+      binary;
+      "--gameplan";
+      gameplan;
+      "--repo-root";
+      root_clone;
+      "--project-name";
+      "v3-test-root";
+      "--protocol-version";
+      "3";
+      "--ack-timeout";
+      "3";
+    |]
   in
   let root_output, root_input, root_errors =
-    Unix.open_process_full root_command env
+    Unix.open_process_args_full binary root_command env
   in
   let root_host = ref (V.initial ()) in
   let root_context =

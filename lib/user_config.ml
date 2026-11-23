@@ -98,31 +98,63 @@ let run_hook ~process_mgr ~clock ~script ~cwd ~env ?(timeout : float option)
     Array.of_list (List.append inherited overlay)
   in
   let cmd = wrap_with_ulimit ~fd_limit script in
-  try
-    match
-      Eio.Time.with_timeout clock timeout (fun () ->
-          Ok
-            (Process_tree.run_status ~process_mgr ~clock ~env:env_array ~cwd
-               ~stdout:stdout_buf ~stderr:stderr_buf cmd))
-    with
-    | Ok (`Exited 0, _, _) -> Ok ()
-    | Ok (`Exited code, _, _) ->
-        build_error
-          ~status_msg:(Printf.sprintf "hook exited with code %d" code)
-          stdout_buf stderr_buf
-    | Ok (`Signaled signal, _, _) ->
-        build_error
-          ~status_msg:(Printf.sprintf "hook terminated by signal %d" signal)
-          stdout_buf stderr_buf
-    | Error `Timeout ->
-        build_error
-          ~status_msg:
-            (Printf.sprintf "hook timed out after %.1fs (ONTON_HOOK_TIMEOUT)"
-               timeout)
-          stdout_buf stderr_buf
-  with
-  | exn when Process_tree.has_cancellation exn -> raise exn
-  | exn ->
-      build_error
-        ~status_msg:(Stdlib.Printexc.to_string exn)
-        stdout_buf stderr_buf
+  let cmd, collect, cleanup =
+    if not Host.is_windows then (cmd, (fun () -> ()), fun () -> ())
+    else
+      let wrapper = Stdlib.Filename.temp_file "onton-hook-" ".sh" in
+      let launcher = Stdlib.Filename.temp_file "onton-hook-" ".cmd" in
+      let stdout_path = Stdlib.Filename.temp_file "onton-hook-out-" "" in
+      let stderr_path = Stdlib.Filename.temp_file "onton-hook-err-" "" in
+      let source =
+        match cmd with [ _; _; source ] -> source | _ -> assert false
+      in
+      Stdlib.Out_channel.with_open_bin wrapper (fun channel ->
+          Stdlib.output_string channel ("#!/bin/sh\n" ^ source ^ "\n"));
+      Stdlib.Out_channel.with_open_bin launcher (fun channel ->
+          Stdlib.Printf.fprintf channel
+            "@\"%s\" \"%s\" >\"%s\" 2>\"%s\"\r\n@exit /b %%errorlevel%%\r\n"
+            (Host.posix_shell ()) wrapper stdout_path stderr_path);
+      let append path buffer =
+        Stdlib.In_channel.with_open_bin path (fun channel ->
+            Buffer.add_string buffer (Stdlib.In_channel.input_all channel))
+      in
+      ( [ launcher ],
+        (fun () ->
+          append stdout_path stdout_buf;
+          append stderr_path stderr_buf),
+        fun () ->
+          List.iter
+            [ wrapper; launcher; stdout_path; stderr_path ]
+            ~f:Host.rm_rf )
+  in
+  Stdlib.Fun.protect ~finally:cleanup (fun () ->
+      try
+        let result =
+          Eio.Time.with_timeout clock timeout (fun () ->
+              Ok
+                (Process_tree.run_status ~process_mgr ~clock ~env:env_array ~cwd
+                   ~stdout:stdout_buf ~stderr:stderr_buf cmd))
+        in
+        collect ();
+        match result with
+        | Ok (`Exited 0, _, _) -> Ok ()
+        | Ok (`Exited code, _, _) ->
+            build_error
+              ~status_msg:(Printf.sprintf "hook exited with code %d" code)
+              stdout_buf stderr_buf
+        | Ok (`Signaled signal, _, _) ->
+            build_error
+              ~status_msg:(Printf.sprintf "hook terminated by signal %d" signal)
+              stdout_buf stderr_buf
+        | Error `Timeout ->
+            build_error
+              ~status_msg:
+                (Printf.sprintf
+                   "hook timed out after %.1fs (ONTON_HOOK_TIMEOUT)" timeout)
+              stdout_buf stderr_buf
+      with
+      | exn when Process_tree.has_cancellation exn -> raise exn
+      | exn ->
+          build_error
+            ~status_msg:(Stdlib.Printexc.to_string exn)
+            stdout_buf stderr_buf)

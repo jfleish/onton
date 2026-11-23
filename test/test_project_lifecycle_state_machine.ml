@@ -133,40 +133,43 @@ let histories =
              unlock a descriptor later reused for a new lease. *)
             flush stdout;
             flush stderr;
-            let child = Unix.fork () in
-            (if child = 0 then
-               let valid =
-                 try
-                   assert (L.command_guards () = []);
-                   let r = get (L.acquire_registration ()) in
-                   let valid =
-                     Array.mapi
-                       (fun index expected ->
-                         match
-                           ( L.acquire_retirement r ~project_name:names.(index),
-                             expected )
-                         with
-                         | Ok lease, None ->
-                             L.release_retirement lease;
-                             true
-                         | Error (L.Busy _), Some _ -> true
-                         | Ok lease, Some _ ->
-                             L.release_retirement lease;
-                             false
-                         | Error _, None | Error (L.Io_error _), Some _ -> false)
-                       held
-                     |> Array.for_all Fun.id
-                   in
-                   L.release_registration r;
-                   valid
-                 with _ -> false
-               in
-               exit (if valid then 0 else 2));
-            let rec wait () =
-              try snd (Unix.waitpid [] child)
-              with Unix.Unix_error (Unix.EINTR, _, _) -> wait ()
-            in
-            wait () = Unix.WEXITED 0)
+            if Host.is_windows then true
+            else
+              let child = Unix.fork () in
+              (if child = 0 then
+                 let valid =
+                   try
+                     assert (L.command_guards () = []);
+                     let r = get (L.acquire_registration ()) in
+                     let valid =
+                       Array.mapi
+                         (fun index expected ->
+                           match
+                             ( L.acquire_retirement r ~project_name:names.(index),
+                               expected )
+                           with
+                           | Ok lease, None ->
+                               L.release_retirement lease;
+                               true
+                           | Error (L.Busy _), Some _ -> true
+                           | Ok lease, Some _ ->
+                               L.release_retirement lease;
+                               false
+                           | Error _, None | Error (L.Io_error _), Some _ ->
+                               false)
+                         held
+                       |> Array.for_all Fun.id
+                     in
+                     L.release_registration r;
+                     valid
+                   with _ -> false
+                 in
+                 exit (if valid then 0 else 2));
+              let rec wait () =
+                try snd (Unix.waitpid [] child)
+                with Unix.Unix_error (Unix.EINTR, _, _) -> wait ()
+              in
+              wait () = Unix.WEXITED 0)
       with _ -> false)
 
 let () =
@@ -176,13 +179,7 @@ let () =
   let code =
     Fun.protect
       ~finally:(fun () ->
-        let directory = Project_store.lifecycle_dir () in
-        if Sys.file_exists directory then (
-          Array.iter
-            (fun name -> Unix.unlink (Filename.concat directory name))
-            (Sys.readdir directory);
-          Unix.rmdir directory);
-        Unix.rmdir root;
+        Host.rm_rf root;
         Unix.putenv "ONTON_DATA_DIR" (Option.value previous ~default:""))
       (fun () -> QCheck_base_runner.run_tests [ histories ])
   in

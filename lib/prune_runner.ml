@@ -245,6 +245,12 @@ let reclaim_project ~registration ~process_mgr ~clock ~slug ~remove =
   let io = make_io cfg.repo_root in
   let* repository = Recovery_ref_prune.repository_id io in
   let project_dir = Unix.realpath (Project_store.project_dir slug) in
+  let normalize_path path =
+    if Host.is_windows then
+      String.lowercase
+        (String.map path ~f:(fun c -> if Char.equal c '\\' then '/' else c))
+    else path
+  in
   let rec inspect others required protected_projects =
     match others with
     | [] -> (
@@ -265,7 +271,10 @@ let reclaim_project ~registration ~process_mgr ~clock ~slug ~remove =
           let* identity =
             Recovery_ref_prune.repository_id (make_io config.repo_root)
           in
-          Ok (config.project_name, String.equal repository identity)
+          Ok
+            ( config.project_name,
+              String.equal (normalize_path repository) (normalize_path identity)
+            )
         in
         match
           Project_lock.acquire ~project_dir:other_dir ~on_stale:(fun _ -> ())
@@ -282,8 +291,9 @@ let reclaim_project ~registration ~process_mgr ~clock ~slug ~remove =
                 let* project, shared = inspect_config () in
                 if not shared then inspect rest required protected_projects
                 else if
-                  Prune_decision.repository_within_project ~project_dir
-                    ~git_dir:repository
+                  Prune_decision.repository_within_project
+                    ~project_dir:(normalize_path project_dir)
+                    ~git_dir:(normalize_path repository)
                 then Ok (Some ("managed repository still used by " ^ other))
                 else
                   match
@@ -396,11 +406,13 @@ let run_prune_registered ~registration ~net ~clock ~process_mgr ~github_token
               :: !errors
         | Ok lock -> (
             let project_name = recover_project_name ~slug in
+            let lock_released = ref false in
             match
               try
                 Ok
                   (Stdlib.Fun.protect
-                     ~finally:(fun () -> Project_lock.release lock)
+                     ~finally:(fun () ->
+                       if not !lock_released then Project_lock.release lock)
                      (fun () ->
                        match
                          Project_lifecycle.acquire_retirement registration
@@ -411,6 +423,12 @@ let run_prune_registered ~registration ~net ~clock ~process_mgr ~github_token
                        | Error (Project_lifecycle.Io_error reason) ->
                            failwith reason
                        | Ok lifecycle ->
+                           (* The lifetime lease now excludes every competing
+                              owner. Release the per-project lock before moving
+                              its directory; Windows cannot rename a directory
+                              containing an open metadata handle. *)
+                           Project_lock.release lock;
+                           lock_released := true;
                            Stdlib.Fun.protect
                              ~finally:(fun () ->
                                Project_lifecycle.release_retirement lifecycle)

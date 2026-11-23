@@ -16,7 +16,7 @@ let with_env name value f =
     f
 
 let write path content =
-  let channel = open_out path in
+  let channel = open_out_bin path in
   Fun.protect
     ~finally:(fun () -> close_out channel)
     (fun () -> output_string channel content)
@@ -24,21 +24,27 @@ let write path content =
 let () =
   let root = Filename.temp_dir "onton-pi-context-" "" in
   Fun.protect
-    ~finally:(fun () -> ignore (Sys.command ("rm -rf " ^ Filename.quote root)))
+    ~finally:(fun () -> Host.rm_rf root)
     (fun () ->
       let executable = Filename.concat root "pi" in
       let captured = Filename.concat root "delivery-path" in
       let argv = Filename.concat root "argv" in
+      let shell_path path =
+        if Host.is_windows then
+          String.map (fun c -> if Char.equal c '\\' then '/' else c) path
+        else path
+      in
       write executable
         ("#!/bin/sh\n" ^ "printf '%s' \"$ONTON_PI_CONTEXT\" > "
-       ^ Filename.quote captured ^ "\nprintf '%s\\n' \"$@\" > "
-       ^ Filename.quote argv
-       ^ "\nprintf '%s\\n' '{\"type\":\"agent_end\",\"messages\":[]}'\n");
+        ^ Filename.quote (shell_path captured)
+        ^ "\nprintf '%s\\n' \"$@\" > "
+        ^ Filename.quote (shell_path argv)
+        ^ "\nprintf '%s\\n' '{\"type\":\"agent_end\",\"messages\":[]}'\n");
       Unix.chmod executable 0o700;
       let entrypoint = Filename.concat root "custom.ts" in
       write entrypoint "export default function () {}";
       with_env "PATH"
-        (root ^ ":" ^ Sys.getenv "PATH")
+        (root ^ (if Host.is_windows then ";" else ":") ^ Sys.getenv "PATH")
         (fun () ->
           with_env "ONTON_DATA_DIR" (Filename.concat root "data") (fun () ->
               with_env "ONTON_PI_EXTENSION" entrypoint (fun () ->
@@ -138,7 +144,7 @@ let () =
 let () =
   let root = Filename.temp_dir "onton-pi-install-" "" in
   Fun.protect
-    ~finally:(fun () -> ignore (Sys.command ("rm -rf " ^ Filename.quote root)))
+    ~finally:(fun () -> Host.rm_rf root)
     (fun () ->
       let install prefix ~flat =
         let directory = if flat then prefix else Filename.concat prefix "bin" in

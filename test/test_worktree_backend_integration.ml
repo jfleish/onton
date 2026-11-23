@@ -496,8 +496,9 @@ let concurrent_reset env =
       G.run_git ~cwd:repo [ "branch"; "race"; base ];
       let old_path = Sys.getenv "PATH" in
       let real_git =
-        String.split_on_char ':' old_path
-        |> List.map (fun dir -> Filename.concat dir "git")
+        String.split_on_char (if Host.is_windows then ';' else ':') old_path
+        |> List.map (fun dir ->
+            Filename.concat dir (if Host.is_windows then "git.exe" else "git"))
         |> List.find (fun path ->
             try
               Unix.access path [ Unix.X_OK ];
@@ -509,15 +510,23 @@ let concurrent_reset env =
       Unix.mkdir bin 0o700;
       let wrapper = Filename.concat bin "git" in
       let marker = Filename.concat repo "concurrent-update" in
+      let shell_path path =
+        if Host.is_windows then
+          String.map (fun c -> if Char.equal c '\\' then '/' else c) path
+        else path
+      in
       (* A competing writer performs the same target update immediately before
          our compare-and-swap. The second real Git command must then fail. *)
       write wrapper
         ("#!/bin/sh\n\
           if [ \"$3\" = update-ref ] && [ \"$4\" = refs/heads/race ] && [ \
           \"$5\" = " ^ Filename.quote ahead ^ " ]; then\n"
-       ^ Filename.quote real_git ^ " \"$@\" || exit 3\n" ^ "touch "
-       ^ Filename.quote marker ^ "\nfi\nexec " ^ Filename.quote real_git
-       ^ " \"$@\"\n");
+        ^ Filename.quote (shell_path real_git)
+        ^ " \"$@\" || exit 3\n" ^ "touch "
+        ^ Filename.quote (shell_path marker)
+        ^ "\nfi\nexec "
+        ^ Filename.quote (shell_path real_git)
+        ^ " \"$@\"\n");
       Unix.chmod wrapper 0o700;
       Fun.protect
         ~finally:(fun () -> Unix.putenv "PATH" old_path)
@@ -1023,7 +1032,8 @@ let () =
       else unavailable_legacy_owner env;
       if Host.is_windows then
         print_endline
-          "failed simgit provisioning cleanup: SKIPPED (simgit is not available on Windows)"
+          "failed simgit provisioning cleanup: SKIPPED (simgit is not \
+           available on Windows)"
       else clean_failed_creation env;
       failed_reset env;
       concurrent_reset env;

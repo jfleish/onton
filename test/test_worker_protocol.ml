@@ -130,22 +130,22 @@ let binary () =
 let spawn_with_fixture ?forge_fixture ~gameplan ~repo_root ~home ~fake_bin
     ~prompt_log () =
   let command =
-    String.concat " "
-      (List.map Filename.quote
-         [
-           binary ();
-           "--gameplan";
-           gameplan;
-           "--repo-root";
-           repo_root;
-           "--project-name";
-           "worker-protocol-test";
-           "--ack-timeout";
-           "1";
-         ])
+    [|
+      binary ();
+      "--gameplan";
+      gameplan;
+      "--repo-root";
+      repo_root;
+      "--project-name";
+      "worker-protocol-test";
+      "--ack-timeout";
+      "1";
+    |]
   in
   let path =
-    fake_bin ^ ":" ^ Option.value (Sys.getenv_opt "PATH") ~default:""
+    fake_bin
+    ^ (if Host.is_windows then ";" else ":")
+    ^ Option.value (Sys.getenv_opt "PATH") ~default:""
   in
   let env =
     Array.to_list (Unix.environment ())
@@ -164,7 +164,9 @@ let spawn_with_fixture ?forge_fixture ~gameplan ~repo_root ~home ~fake_bin
       | None -> values
       | Some fixture -> ("ONTON_WORKER_FORGE_FIXTURE=" ^ fixture) :: values))
   in
-  let output, input, error = Unix.open_process_full command env in
+  let output, input, error =
+    Unix.open_process_args_full command.(0) command env
+  in
   { output; input; error; pending = Buffer.create 4096 }
 
 let spawn ~gameplan ~repo_root ~home ~fake_bin ~prompt_log =
