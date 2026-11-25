@@ -108,7 +108,7 @@ let run_case env ~capture_session ~respond =
       (match old with
       | Some value -> Unix.putenv "ONTON_DATA_DIR" value
       | None -> Unix.unsetenv "ONTON_DATA_DIR");
-      ignore (Stdlib.Sys.command ("rm -rf " ^ Stdlib.Filename.quote root)))
+       Onton_test_support.Git_env.rm_rf root)
     ~f:(fun () ->
       let patch_id = Patch_id.of_string "p1" in
       let main = Branch.of_string "main" in

@@ -835,11 +835,12 @@
  (libraries onton onton_core onton_test_support eio_main unix onton_core_test_support))
 
 (test
- (name test_session_timeout)
- (modules test_session_timeout)
- (libraries onton onton_core onton_core_test_support eio_main unix)
- (ocamlopt_flags (:standard -w -40-42))
- (ocamlc_flags (:standard -w -40-42)))
+  (name test_session_timeout)
+  (modules test_session_timeout)
+  (libraries onton onton_core onton_core_test_support onton_test_support eio_main
+    unix)
+  (ocamlopt_flags (:standard -w -40-42))
+  (ocamlc_flags (:standard -w -40-42)))
 
 (test
  (name test_backend_idle_timeout)

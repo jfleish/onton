@@ -4,7 +4,7 @@
 open Onton
 
 let write_file path contents =
-  let oc = Stdlib.Out_channel.open_text path in
+  let oc = Stdlib.Out_channel.open_bin path in
   Fun.protect
     ~finally:(fun () -> Stdlib.Out_channel.close oc)
     (fun () -> Stdlib.Out_channel.output_string oc contents)

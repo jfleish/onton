@@ -57,7 +57,12 @@ val init_repo : string -> unit
     and callers that build a precise commit graph (rebase tests) get a clean
     slate. [dir] must already exist. *)
 
+val rm_rf : string -> unit
+(** Best-effort recursive removal of [path]. Tolerates a missing path and
+    retries Windows file/directory removal after a short delay when another
+    process still holds a handle. *)
+
 val with_temp_repo : (string -> 'a) -> 'a
 (** [with_temp_repo f] creates a fresh temp directory, runs {!init_repo} on it,
-    calls [f dir], and best-effort [rm -rf]s the directory afterward (even if
+    calls [f dir], and best-effort {!rm_rf}s the directory afterward (even if
     [f] raises). Returns [f]'s result. *)
