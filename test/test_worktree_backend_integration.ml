@@ -672,7 +672,10 @@ let targeted_prune_ignores_unrelated_owner env =
       let nested_stale_path = Filename.concat repo "stale-prefix-nested" in
       G.run_git ~cwd:repo
         [ "worktree"; "add"; "-b"; "prefix/nested"; nested_stale_path ];
-      let whitespace_stale_path = Filename.concat repo " stale-whitespace " in
+      let whitespace_stale_path =
+        Filename.concat repo
+          (if Host.is_windows then " stale whitespace" else " stale-whitespace ")
+      in
       G.run_git ~cwd:repo
         [ "worktree"; "add"; "-b"; "whitespace"; whitespace_stale_path ];
       let locked_stale_path = Filename.concat repo "stale-locked" in

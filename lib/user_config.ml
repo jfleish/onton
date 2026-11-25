@@ -97,22 +97,28 @@ let run_hook ~process_mgr ~clock ~script ~cwd ~env ?(timeout : float option)
     let overlay = List.map env ~f:(fun (k, v) -> Printf.sprintf "%s=%s" k v) in
     Array.of_list (List.append inherited overlay)
   in
-  let cmd = wrap_with_ulimit ~fd_limit script in
   let cmd, collect, cleanup =
-    if not Host.is_windows then (cmd, (fun () -> ()), fun () -> ())
+    if not Host.is_windows then
+      (wrap_with_ulimit ~fd_limit script, (fun () -> ()), fun () -> ())
     else
       let wrapper = Stdlib.Filename.temp_file "onton-hook-" ".sh" in
       let launcher = Stdlib.Filename.temp_file "onton-hook-" ".cmd" in
       let stdout_path = Stdlib.Filename.temp_file "onton-hook-out-" "" in
       let stderr_path = Stdlib.Filename.temp_file "onton-hook-err-" "" in
-      let source =
-        match cmd with [ _; _; source ] -> source | _ -> assert false
+      let posix_path path =
+        String.map path ~f:(fun c -> if Char.equal c '\\' then '/' else c)
       in
       Stdlib.Out_channel.with_open_bin wrapper (fun channel ->
-          Stdlib.output_string channel ("#!/bin/sh\n" ^ source ^ "\n"));
+          Stdlib.Printf.fprintf channel
+            "#!/bin/sh\ncd \"$ONTON_HOOK_CWD\" || exit 1\nunset \
+             ONTON_HOOK_CWD\n. \"%s\"\n"
+            (posix_path script));
       Stdlib.Out_channel.with_open_bin launcher (fun channel ->
           Stdlib.Printf.fprintf channel
-            "@\"%s\" \"%s\" >\"%s\" 2>\"%s\"\r\n@exit /b %%errorlevel%%\r\n"
+            "@set \"ONTON_HOOK_CWD=%%CD%%\"\r\n\
+             @cd /d \"%%TEMP%%\"\r\n\
+             @\"%s\" \"%s\" >\"%s\" 2>\"%s\"\r\n\
+             @exit /b %%errorlevel%%\r\n"
             (Host.posix_shell ()) wrapper stdout_path stderr_path);
       let append path buffer =
         Stdlib.In_channel.with_open_bin path (fun channel ->

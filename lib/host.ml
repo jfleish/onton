@@ -135,16 +135,19 @@ let windows_command args =
           | None -> []
           | Some path -> String.split path ~on:';'
         in
+        let is_regular_file path =
+          Stdlib.Sys.file_exists path
+          && not (try Stdlib.Sys.is_directory path with Sys_error _ -> true)
+        in
         let found =
-          List.find_map candidates ~f:(fun candidate ->
-              if String.contains candidate '\\' || String.contains candidate '/'
-              then
-                if Stdlib.Sys.file_exists candidate then Some candidate
-                else None
-              else
-                List.find_map path_dirs ~f:(fun dir ->
+          if String.contains command '\\' || String.contains command '/' then
+            List.find_map candidates ~f:(fun candidate ->
+                if is_regular_file candidate then Some candidate else None)
+          else
+            List.find_map path_dirs ~f:(fun dir ->
+                List.find_map candidates ~f:(fun candidate ->
                     let path = Stdlib.Filename.concat dir candidate in
-                    if Stdlib.Sys.file_exists path then Some path else None))
+                    if is_regular_file path then Some path else None))
         in
         match found with
         | None

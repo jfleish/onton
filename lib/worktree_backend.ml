@@ -209,9 +209,16 @@ let make ~fs ~clock ~process_mgr ~repo_root ~(config : config) ~timeout_seconds
       let json = Yojson.Safe.from_string (read_file file) in
       Some (get (parse_ownership_for_path ~path:(canonical path) json))
   in
+  let native_path path =
+    if Host.is_windows then
+      String.map path ~f:(fun c -> if Char.equal c '/' then '\\' else c)
+    else path
+  in
   let git_list () =
     let out = git [ "worktree"; "list"; "--porcelain"; "-z" ] in
     get (parse_git_list out)
+    |> List.map ~f:(fun (e : registration) ->
+        { e with path = native_path e.path })
   in
   let git_registrations_for_branch branch =
     let exact_ref = "refs/heads/" ^ branch in
@@ -223,7 +230,8 @@ let make ~fs ~clock ~process_mgr ~repo_root ~(config : config) ~timeout_seconds
         | Some (refname, encoded_path) when String.equal refname exact_ref -> (
             match String.chop_suffix encoded_path ~suffix:"\000" with
             | Some path when not (String.is_empty path) ->
-                Some { path; branch = Some branch; mode = None }
+                Some
+                  { path = native_path path; branch = Some branch; mode = None }
             | Some _ | None -> None)
         | Some _ | None -> None)
   in
@@ -265,7 +273,7 @@ let make ~fs ~clock ~process_mgr ~repo_root ~(config : config) ~timeout_seconds
         let entries = get (parse_simgit_list (sg c [ "list"; "--json" ])) in
         match
           List.find entries ~f:(fun (e : registration) ->
-              String.equal e.path (canonical path))
+              String.equal (canonical e.path) (canonical path))
         with
         | Some e when equal_backend (registration_backend e) Simgit -> c
         | Some _ | None -> Worktree_lifecycle.git)

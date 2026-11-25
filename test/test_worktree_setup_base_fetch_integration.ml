@@ -960,7 +960,10 @@ let scenario_hook_changes_checkout env move_checkout =
   Stdlib.Out_channel.with_open_bin script (fun channel ->
       Stdlib.output_string channel
         (if move_checkout then
-           "#!/bin/sh\nexec git worktree move . ../moved-checkout\n"
+           "#!/bin/sh\n\
+            common=$(git rev-parse --path-format=absolute --git-common-dir) && \
+            pwd=$(pwd) && cd .. && exec git --git-dir=\"$common\" worktree \
+            move \"$pwd\" ../moved-checkout\n"
          else "#!/bin/sh\nexec git switch -c hook-other-branch\n"));
   Unix.chmod script 0o700;
   let gameplan = { empty_gameplan with patches = [ mk_patch ~pid ~branch ] } in
