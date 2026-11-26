@@ -115,7 +115,7 @@ jobs:
           path: onton-${{ matrix.target }}.tar.gz
 
   windows:
-    name: Build (x86_64-pc-windows-msvc)
+    name: Build (x86_64-pc-windows-gnu)
     runs-on: windows-2025
     steps:
       - uses: actions/checkout@v4
@@ -140,13 +140,18 @@ jobs:
           Copy-Item _build/default/bin/coordinator.exe _dist/bin/onton-coordinator.exe
           Copy-Item _build/default/bin/setsid_exec/main.exe _dist/bin/onton-setsid-exec.exe
           Copy-Item pi-onton/src/index.ts,pi-onton/src/protocol.ts,pi-onton/src/files.ts _dist/bin/share/onton/pi-onton/
+          $gcc = (Get-Command x86_64-w64-mingw32-gcc.exe -ErrorAction Stop).Source
+          $cygwinRoot = Split-Path (Split-Path $gcc -Parent) -Parent
+          $gmp = Get-ChildItem -Path $cygwinRoot -Recurse -File -Filter libgmp-10.dll -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $gmp) { throw 'MinGW runtime libgmp-10.dll not found' }
+          Copy-Item $gmp.FullName _dist/bin/libgmp-10.dll
           if ((opam exec -- dune exec bin/main.exe -- --version) -ne $version) { throw 'Version smoke test failed' }
           opam exec -- dune exec bin/setsid_exec/main.exe -- cmd.exe /c exit 0
-          Compress-Archive -Path _dist/bin/* -DestinationPath ('onton-x86_64-pc-windows-msvc.zip')
+          Compress-Archive -Path _dist/bin/* -DestinationPath ('onton-x86_64-pc-windows-gnu.zip')
       - uses: actions/upload-artifact@v4
         with:
-          name: onton-x86_64-pc-windows-msvc
-          path: onton-x86_64-pc-windows-msvc.zip
+          name: onton-x86_64-pc-windows-gnu
+          path: onton-x86_64-pc-windows-gnu.zip
 
   release:
     name: Create Release
@@ -168,7 +173,7 @@ jobs:
             onton-arm64-apple-darwin.tar.gz \
             onton-x86_64-unknown-linux-gnu.tar.gz \
             onton-aarch64-unknown-linux-gnu.tar.gz \
-            onton-x86_64-pc-windows-msvc.zip
+            onton-x86_64-pc-windows-gnu.zip
 
   homebrew:
     name: Update Homebrew Formula
