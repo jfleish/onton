@@ -1,0 +1,16 @@
+test_backend_routing wrapper_exit=0 elapsed=0.97
+test_debug_upload wrapper_exit=0 elapsed=0.68
+test_dependency_injection_functors wrapper_exit=0 elapsed=1.22
+test_initial_tracking wrapper_exit=0 elapsed=70.63
+test_patch_controller wrapper_exit=0 elapsed=0.80
+test_repair_session wrapper_exit=0 elapsed=6.79
+test_repo_root wrapper_exit=0 elapsed=3.67
+test_runtime_create wrapper_exit=0 elapsed=1.07
+test_session_driver_telemetry wrapper_exit=0 elapsed=1.24
+test_session_timeout wrapper_exit=0 elapsed=1.71
+test_spawn_logic wrapper_exit=0 elapsed=0.72
+test_telemetry_migration wrapper_exit=0 elapsed=0.69
+test_tui_render_frame wrapper_exit=0 elapsed=1.12
+test_wontdo_session wrapper_exit=0 elapsed=6.17
+test_worker_recovery_prompt wrapper_exit=0 elapsed=13.43
+test_worktree_spawn_retry wrapper_exit=0 elapsed=0.68

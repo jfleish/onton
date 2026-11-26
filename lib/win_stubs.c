@@ -13,6 +13,75 @@
 #ifdef _WIN32
 
 #include <windows.h>
+#include <io.h>
+#include <stdlib.h>
+#include <string.h>
+
+CAMLprim value caml_onton_set_nonblock(value v_fd) {
+  CAMLparam1(v_fd);
+  intptr_t raw = _get_osfhandle(Int_val(v_fd));
+  if (raw == -1) CAMLreturn(Val_false);
+  DWORD mode = PIPE_NOWAIT;
+  CAMLreturn(Val_bool(
+      SetNamedPipeHandleState((HANDLE)raw, &mode, NULL, NULL)));
+}
+
+typedef struct onton_pipe_write {
+  HANDLE handle;
+  const char *data;
+  DWORD length;
+  DWORD written;
+  BOOL ok;
+  DWORD error;
+} onton_pipe_write;
+
+static DWORD WINAPI onton_pipe_write_thread(LPVOID raw) {
+  onton_pipe_write *write = (onton_pipe_write *)raw;
+  write->ok = WriteFile(write->handle, write->data, write->length,
+                        &write->written, NULL);
+  write->error = write->ok ? ERROR_SUCCESS : GetLastError();
+  return 0;
+}
+
+CAMLprim value caml_onton_write_pipe_timeout(value v_fd, value v_data,
+                                             value v_offset, value v_length,
+                                             value v_timeout_ms) {
+  CAMLparam5(v_fd, v_data, v_offset, v_length, v_timeout_ms);
+  intptr_t raw = _get_osfhandle(Int_val(v_fd));
+  int offset = Int_val(v_offset);
+  int length = Int_val(v_length);
+  DWORD timeout_ms = (DWORD)Int_val(v_timeout_ms);
+  if (raw == -1 || offset < 0 || length < 0
+      || (size_t)offset + (size_t)length > caml_string_length(v_data))
+    CAMLreturn(Val_int(-2));
+  if (length == 0) CAMLreturn(Val_int(0));
+
+  char *copy = (char *)malloc((size_t)length);
+  if (copy == NULL) CAMLreturn(Val_int(-2));
+  memcpy(copy, String_val(v_data) + offset, (size_t)length);
+  onton_pipe_write write = {(HANDLE)raw, copy, (DWORD)length, 0, FALSE,
+                            ERROR_SUCCESS};
+  HANDLE thread = CreateThread(NULL, 0, onton_pipe_write_thread, &write, 0,
+                               NULL);
+  if (thread == NULL) {
+    free(copy);
+    CAMLreturn(Val_int(-2));
+  }
+
+  caml_enter_blocking_section();
+  DWORD wait = WaitForSingleObject(thread, timeout_ms);
+  if (wait == WAIT_TIMEOUT) {
+    (void)CancelSynchronousIo(thread);
+    (void)WaitForSingleObject(thread, INFINITE);
+  }
+  caml_leave_blocking_section();
+
+  int result = wait == WAIT_TIMEOUT ? -1
+             : (write.ok ? (int)write.written : -2);
+  CloseHandle(thread);
+  free(copy);
+  CAMLreturn(Val_int(result));
+}
 
 typedef struct onton_job_entry {
   DWORD pid;
@@ -133,6 +202,24 @@ CAMLprim value caml_onton_parent_alive(value v_pid) {
 #include <errno.h>
 #include <signal.h>
 #include <sys/types.h>
+
+CAMLprim value caml_onton_set_nonblock(value v_fd) {
+  CAMLparam1(v_fd);
+  (void)v_fd;
+  CAMLreturn(Val_false);
+}
+
+CAMLprim value caml_onton_write_pipe_timeout(value v_fd, value v_data,
+                                             value v_offset, value v_length,
+                                             value v_timeout_ms) {
+  CAMLparam5(v_fd, v_data, v_offset, v_length, v_timeout_ms);
+  (void)v_fd;
+  (void)v_data;
+  (void)v_offset;
+  (void)v_length;
+  (void)v_timeout_ms;
+  CAMLreturn(Val_int(-2));
+}
 
 CAMLprim value caml_onton_process_alive(value v_pid) {
   CAMLparam1(v_pid);

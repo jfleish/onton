@@ -19,6 +19,11 @@ external close_job : int -> unit = "caml_onton_close_job"
 external os_pid_stub : unit -> int = "caml_onton_os_pid"
 external pid_of_spawned_stub : int -> int = "caml_onton_pid_of_spawned"
 external windows_random_bytes : int -> bytes = "caml_onton_random_bytes"
+external set_nonblock_stub : Unix.file_descr -> bool = "caml_onton_set_nonblock"
+
+external write_pipe_timeout_stub :
+  Unix.file_descr -> string -> int -> int -> int -> int
+  = "caml_onton_write_pipe_timeout"
 
 (** This process's OS PID, as other processes see it. On Windows [Unix.getpid]
     is not usable with [OpenProcess] from another process. *)
@@ -55,10 +60,16 @@ let home_dir () =
 let home_dir_or_cwd () = Option.value (home_dir ()) ~default:"."
 let null_device = if is_windows then "NUL" else "/dev/null"
 
-(** [Unix.set_nonblock] only accepts sockets on Windows. Pipes are polled with
-    [Unix.select], and a Windows pipe read after readability returns the
-    available bytes, so failing to switch the handle is harmless. *)
-let set_nonblock fd = try Unix.set_nonblock fd with Unix.Unix_error _ -> ()
+(** [Unix.set_nonblock] only accepts sockets on Windows. For anonymous pipes,
+    switch the underlying Windows handle to [PIPE_NOWAIT] so a readiness race
+    cannot turn the bounded stream write into an uninterruptible blocking call.
+*)
+let set_nonblock fd =
+  try Unix.set_nonblock fd
+  with Unix.Unix_error _ -> ignore (set_nonblock_stub fd)
+
+let write_pipe_timeout fd data offset length timeout_ms =
+  write_pipe_timeout_stub fd data offset length timeout_ms
 
 (** Base directory for onton's durable state. Windows uses
     [%LOCALAPPDATA%\\onton]; POSIX keeps the XDG layout. *)

@@ -93,19 +93,32 @@ let send t ~timeout frames =
     let deadline = t.monotonic_now () +. timeout in
     let rec write frame offset =
       if offset = String.length frame then Ok ()
-      else if not (waiting t deadline [] [ t.input ]) then
-        Error "worker send uncertain (timeout)"
       else
-        match
-          Unix.single_write_substring t.input frame offset
-            (String.length frame - offset)
-        with
-        | 0 -> Error "worker send uncertain (closed)"
-        | count -> write frame (offset + count)
-        | exception
-            Unix.Unix_error ((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _)
-          ->
-            write frame offset
+        let remaining = deadline -. t.monotonic_now () in
+        if remaining <= 0. then Error "worker send uncertain (timeout)"
+        else if Host.is_windows then
+          let timeout_ms = Int.max 1 (Int.of_float (remaining *. 1000.)) in
+          match
+            Host.write_pipe_timeout t.input frame offset
+              (String.length frame - offset)
+              timeout_ms
+          with
+          | -1 -> Error "worker send uncertain (timeout)"
+          | count when count > 0 -> write frame (offset + count)
+          | _ -> Error "worker send uncertain (closed)"
+        else if not (waiting t deadline [] [ t.input ]) then
+          Error "worker send uncertain (timeout)"
+        else
+          match
+            Unix.single_write_substring t.input frame offset
+              (String.length frame - offset)
+          with
+          | 0 -> Error "worker send uncertain (closed)"
+          | count -> write frame (offset + count)
+          | exception
+              Unix.Unix_error
+                ((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _) ->
+              write frame offset
     in
     let rec loop = function
       | [] -> Ok ()

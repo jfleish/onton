@@ -1,0 +1,7 @@
+test_coordinator_stream_io wrapper_exit=2 elapsed=39.28
+test_coordinator_resource wrapper_exit=0 elapsed=1.33
+test_coordinator_recovery wrapper_exit=0 elapsed=1.25
+test_coordinator_controls_forge wrapper_exit=0 elapsed=1.40
+test_coordinator_command_forge wrapper_exit=0 elapsed=1.30
+test_coordinator_bootstrap wrapper_exit=0 elapsed=0.65
+test_execution_checkpoint wrapper_exit=0 elapsed=1.18

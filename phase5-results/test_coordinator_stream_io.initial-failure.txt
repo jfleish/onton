@@ -1,0 +1,7 @@
+Initial Phase 5 failure preserved from 2026-11-25:
+status=exited
+exit_code=2
+elapsed_sec=38.96
+error=Failure("backpressure cannot indefinitely block cancellation")
+Diagnosis: Windows anonymous-pipe writes were synchronous despite readiness polling; Unix.single_write_substring could block until the sleeping helper exited.
+Resolution: native Windows bounded write uses a cancellable worker WriteFile with CancelSynchronousIo and a deadline; POSIX path remains unchanged.

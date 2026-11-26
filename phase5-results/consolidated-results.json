@@ -1,0 +1,1500 @@
+{
+    "generated":  "2026-11-25T22:58:35.5554839-05:00",
+    "branch":  "windows-native-port",
+    "manifests":  [
+                      "manifest.jsonl",
+                      "raw-manifest.jsonl",
+                      "phase5-pure-manifest.jsonl",
+                      "process-runtime-manifest.jsonl",
+                      "worker-coordinator-manifest.jsonl",
+                      "git-acceptance-manifest.jsonl"
+                  ],
+    "records":  [
+                    {
+                        "test":  "test_action_outcome_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.8,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_action_outcome_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_action_outcome_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_action_outcome_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_activity_log_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  1.07,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_activity_log_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_activity_log_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_activity_log_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_adhoc_target_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.55,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_adhoc_target_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_adhoc_target_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_adhoc_target_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_automerge_deadline_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.77,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_automerge_deadline_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_automerge_deadline_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_automerge_deadline_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_automerge_state_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.75,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_automerge_state_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_automerge_state_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_automerge_state_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_backend_event_parser_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.71,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_backend_event_parser_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_backend_event_parser_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_backend_event_parser_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_backend_parser_totality",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  2.19,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_backend_parser_totality.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_backend_parser_totality.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_backend_parser_totality.detached.err.log"
+                    },
+                    {
+                        "test":  "test_backend_routing",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.66,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_backend_routing.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_backend_routing.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_backend_routing.detached.err.log"
+                    },
+                    {
+                        "test":  "test_base_containment",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.66,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_base_containment.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_base_containment.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_base_containment.detached.err.log"
+                    },
+                    {
+                        "test":  "test_base_containment_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  2.75,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_base_containment_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_base_containment_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_base_containment_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_branch_git_inputs_git",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  113.7,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_git_inputs_git.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_git_inputs_git.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_git_inputs_git.detached.err.log"
+                    },
+                    {
+                        "test":  "test_branch_git_inputs_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  1.61,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_git_inputs_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_git_inputs_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_git_inputs_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_branch_poll_decision_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.58,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_poll_decision_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_poll_decision_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_poll_decision_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_branch_provisioning_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.76,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_provisioning_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_provisioning_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_provisioning_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_branch_reconcile_git",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  57.59,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_reconcile_git.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_reconcile_git.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_reconcile_git.detached.err.log"
+                    },
+                    {
+                        "test":  "test_branch_reconcile_git_ancestry",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  104.53,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_reconcile_git_ancestry.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_reconcile_git_ancestry.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_reconcile_git_ancestry.detached.err.log"
+                    },
+                    {
+                        "test":  "test_branch_reconcile_git_capture",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  38.39,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_reconcile_git_capture.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_reconcile_git_capture.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_reconcile_git_capture.detached.err.log"
+                    },
+                    {
+                        "test":  "test_branch_reconcile_git_checkpoint",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  45.18,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_reconcile_git_checkpoint.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_reconcile_git_checkpoint.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_reconcile_git_checkpoint.detached.err.log"
+                    },
+                    {
+                        "test":  "test_branch_reconcile_git_interruptions",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  228.15,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_reconcile_git_interruptions.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_reconcile_git_interruptions.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_reconcile_git_interruptions.detached.err.log"
+                    },
+                    {
+                        "test":  "test_branch_reconcile_git_publication",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  91.36,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_reconcile_git_publication.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_reconcile_git_publication.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_reconcile_git_publication.detached.err.log"
+                    },
+                    {
+                        "test":  "test_branch_reconcile_git_repair",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  40.63,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_reconcile_git_repair.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_reconcile_git_repair.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_reconcile_git_repair.detached.err.log"
+                    },
+                    {
+                        "test":  "test_branch_reconcile_git_transport",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  44.53,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_reconcile_git_transport.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_reconcile_git_transport.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_reconcile_git_transport.detached.err.log"
+                    },
+                    {
+                        "test":  "test_branch_reconcile_model",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  2.19,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_reconcile_model.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_reconcile_model.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_reconcile_model.detached.err.log"
+                    },
+                    {
+                        "test":  "test_branch_reconcile_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  17.23,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_reconcile_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_reconcile_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_branch_reconcile_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_branch_remote_entrypoints",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  378.29,
+                        "source":  "Phase4C verified passing report (reconciled; not rerun)",
+                        "stdout":  null,
+                        "stderr":  null
+                    },
+                    {
+                        "test":  "test_ci_check_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.69,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_ci_check_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_ci_check_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_ci_check_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_ci_log_digest_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  2.76,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_ci_log_digest_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_ci_log_digest_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_ci_log_digest_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_ci_rerun_decision_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  1,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_ci_rerun_decision_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_ci_rerun_decision_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_ci_rerun_decision_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_claude_backend_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.92,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_claude_backend_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_claude_backend_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_claude_backend_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_claude_process_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.65,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_claude_process_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_claude_process_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_claude_process_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_codex_cost_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.59,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_codex_cost_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_codex_cost_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_codex_cost_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_comment_id_allocation_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.71,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_comment_id_allocation_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_comment_id_allocation_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_comment_id_allocation_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_comment_responses_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.78,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_comment_responses_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_comment_responses_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_comment_responses_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_content_gate_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.86,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_content_gate_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_content_gate_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_content_gate_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_control_command_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.72,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_control_command_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_control_command_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_control_command_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_coordinator_archive_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  2.19,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_archive_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_archive_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_archive_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_coordinator_bootstrap",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.35,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_bootstrap.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_bootstrap.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_bootstrap.detached.err.log"
+                    },
+                    {
+                        "test":  "test_coordinator_command_forge",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  1,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_command_forge.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_command_forge.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_command_forge.detached.err.log"
+                    },
+                    {
+                        "test":  "test_coordinator_config_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.74,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_config_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_config_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_config_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_coordinator_controls_forge",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  1.08,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_controls_forge.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_controls_forge.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_controls_forge.detached.err.log"
+                    },
+                    {
+                        "test":  "test_coordinator_host_state_machine",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  1.4,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_host_state_machine.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_host_state_machine.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_host_state_machine.detached.err.log"
+                    },
+                    {
+                        "test":  "test_coordinator_inputs_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.72,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_inputs_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_inputs_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_inputs_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_coordinator_journal_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.71,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_journal_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_journal_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_journal_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_coordinator_observation_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  1.26,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_observation_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_observation_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_observation_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_coordinator_recovery",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.95,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_recovery.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_recovery.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_recovery.detached.err.log"
+                    },
+                    {
+                        "test":  "test_coordinator_resource",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  1.03,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_resource.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_resource.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_resource.detached.err.log"
+                    },
+                    {
+                        "test":  "test_coordinator_result_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  1.41,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_result_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_result_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_result_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_coordinator_state_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.7,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_state_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_state_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_state_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_coordinator_store_state_machine",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  2.04,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_store_state_machine.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_store_state_machine.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_store_state_machine.detached.err.log"
+                    },
+                    {
+                        "test":  "test_coordinator_stream_io",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  16.63,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_stream_io.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_stream_io.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_coordinator_stream_io.detached.err.log"
+                    },
+                    {
+                        "test":  "test_debug_upload",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.4,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_debug_upload.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_debug_upload.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_debug_upload.detached.err.log"
+                    },
+                    {
+                        "test":  "test_dependency_injection_functors",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.92,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_dependency_injection_functors.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_dependency_injection_functors.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_dependency_injection_functors.detached.err.log"
+                    },
+                    {
+                        "test":  "test_display_status_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.75,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_display_status_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_display_status_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_display_status_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_execution_checkpoint",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.88,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_execution_checkpoint.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_execution_checkpoint.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_execution_checkpoint.detached.err.log"
+                    },
+                    {
+                        "test":  "test_execution_mode_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  1.29,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_execution_mode_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_execution_mode_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_execution_mode_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_failure_subkind_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.67,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_failure_subkind_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_failure_subkind_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_failure_subkind_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_fanin_liveness_interleavings",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.64,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_fanin_liveness_interleavings.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_fanin_liveness_interleavings.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_fanin_liveness_interleavings.detached.err.log"
+                    },
+                    {
+                        "test":  "test_feature_pr_body_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  32.34,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_feature_pr_body_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_feature_pr_body_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_feature_pr_body_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_findings_resolver",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.83,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_findings_resolver.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_findings_resolver.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_findings_resolver.detached.err.log"
+                    },
+                    {
+                        "test":  "test_forge_observation_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.77,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_forge_observation_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_forge_observation_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_forge_observation_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_forge_observation_state_machine",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.81,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_forge_observation_state_machine.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_forge_observation_state_machine.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_forge_observation_state_machine.detached.err.log"
+                    },
+                    {
+                        "test":  "test_gameplan_add_patch_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.4,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_gameplan_add_patch_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_gameplan_add_patch_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_gameplan_add_patch_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_gameplan_document_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.94,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_gameplan_document_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_gameplan_document_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_gameplan_document_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_gameplan_parser_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.9,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_gameplan_parser_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_gameplan_parser_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_gameplan_parser_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_gameplan_publication_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.89,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_gameplan_publication_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_gameplan_publication_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_gameplan_publication_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_gameplan_scalar_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.72,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_gameplan_scalar_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_gameplan_scalar_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_gameplan_scalar_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_gemini_event_parser_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.71,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_gemini_event_parser_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_gemini_event_parser_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_gemini_event_parser_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_git_observation_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.93,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_git_observation_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_git_observation_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_git_observation_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_git_oid_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.9,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_git_oid_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_git_oid_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_git_oid_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_github_check_details",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.36,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_github_check_details.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_github_check_details.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_github_check_details.detached.err.log"
+                    },
+                    {
+                        "test":  "test_github_merge_commit_null",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.35,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_github_merge_commit_null.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_github_merge_commit_null.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_github_merge_commit_null.detached.err.log"
+                    },
+                    {
+                        "test":  "test_github_merge_queue_removal",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.34,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_github_merge_queue_removal.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_github_merge_queue_removal.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_github_merge_queue_removal.detached.err.log"
+                    },
+                    {
+                        "test":  "test_github_target_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.7,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_github_target_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_github_target_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_github_target_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_graph_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.74,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_graph_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_graph_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_graph_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_initial_tracking",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  70.31,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_initial_tracking.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_initial_tracking.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_initial_tracking.detached.err.log"
+                    },
+                    {
+                        "test":  "test_interleaving_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  1.47,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_interleaving_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_interleaving_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_interleaving_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_invariants_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.7,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_invariants_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_invariants_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_invariants_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_json",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.68,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_json.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_json.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_json.detached.err.log"
+                    },
+                    {
+                        "test":  "test_json_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.84,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_json_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_json_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_json_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_legacy_publication",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  176.23,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_legacy_publication.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_legacy_publication.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_legacy_publication.detached.err.log"
+                    },
+                    {
+                        "test":  "test_merge_queue_decision_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.99,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_merge_queue_decision_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_merge_queue_decision_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_merge_queue_decision_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_misc_pure_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.58,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_misc_pure_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_misc_pure_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_misc_pure_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_onton",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.65,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_onton.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_onton.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_onton.detached.err.log"
+                    },
+                    {
+                        "test":  "test_openai_auto_settings_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.7,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_openai_auto_settings_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_openai_auto_settings_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_openai_auto_settings_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_opencode_event_parser_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.71,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_opencode_event_parser_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_opencode_event_parser_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_opencode_event_parser_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_orchestrator_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.5,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_orchestrator_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_orchestrator_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_orchestrator_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_patch_agent",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.66,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_patch_agent.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_patch_agent.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_patch_agent.detached.err.log"
+                    },
+                    {
+                        "test":  "test_patch_agent_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  1.12,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_patch_agent_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_patch_agent_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_patch_agent_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_patch_controller",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.39,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_patch_controller.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_patch_controller.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_patch_controller.detached.err.log"
+                    },
+                    {
+                        "test":  "test_patch_controller_state_machine",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.41,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_patch_controller_state_machine.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_patch_controller_state_machine.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_patch_controller_state_machine.detached.err.log"
+                    },
+                    {
+                        "test":  "test_patch_decision",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.82,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_patch_decision.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_patch_decision.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_patch_decision.detached.err.log"
+                    },
+                    {
+                        "test":  "test_patch_pr_status_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.73,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_patch_pr_status_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_patch_pr_status_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_patch_pr_status_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_persistence_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  3.11,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_persistence_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_persistence_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_persistence_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_pi_event_parser_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.71,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_pi_event_parser_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_pi_event_parser_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_pi_event_parser_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_poll_batch_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  15.47,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_poll_batch_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_poll_batch_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_poll_batch_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_poll_cycle_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  1.83,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_poll_cycle_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_poll_cycle_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_poll_cycle_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_poll_log_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.44,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_poll_log_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_poll_log_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_poll_log_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_poller_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  2.01,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_poller_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_poller_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_poller_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_pr_body_limit_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  1.11,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_pr_body_limit_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_pr_body_limit_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_pr_body_limit_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_pr_state_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.66,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_pr_state_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_pr_state_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_pr_state_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_project_identity_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  1.16,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_project_identity_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_project_identity_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_project_identity_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_project_lifecycle_state_machine",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  1.85,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_project_lifecycle_state_machine.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_project_lifecycle_state_machine.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_project_lifecycle_state_machine.detached.err.log"
+                    },
+                    {
+                        "test":  "test_project_retirement_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.91,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_project_retirement_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_project_retirement_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_project_retirement_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.61,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_prune_decision_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.91,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_prune_decision_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_prune_decision_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_prune_decision_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_push_plan_integration",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  1003.28,
+                        "source":  "Phase1-4 explicit 102-scenario report"
+                    },
+                    {
+                        "test":  "test_push_plan_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  1.46,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_push_plan_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_push_plan_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_push_plan_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_push_reject_classify_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.82,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_push_reject_classify_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_push_reject_classify_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_push_reject_classify_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_push_timeout_integration",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  17.45,
+                        "source":  "Phase4E explicit status"
+                    },
+                    {
+                        "test":  "test_rebase_onto",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  57.79,
+                        "source":  "Phase4E explicit status"
+                    },
+                    {
+                        "test":  "test_reconcile_plan_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.93,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_reconcile_plan_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_reconcile_plan_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_reconcile_plan_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_reconcile_recovery_git",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  113.49,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_reconcile_recovery_git.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_reconcile_recovery_git.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_reconcile_recovery_git.detached.err.log"
+                    },
+                    {
+                        "test":  "test_reconciler_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.74,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_reconciler_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_reconciler_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_reconciler_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_rediscover_decision_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.72,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_rediscover_decision_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_rediscover_decision_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_rediscover_decision_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_repair_session",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  6.45,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_repair_session.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_repair_session.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_repair_session.detached.err.log"
+                    },
+                    {
+                        "test":  "test_replay_boundary_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  1.38,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_replay_boundary_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_replay_boundary_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_replay_boundary_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_replay_boundary_state_machine",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.72,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_replay_boundary_state_machine.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_replay_boundary_state_machine.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_replay_boundary_state_machine.detached.err.log"
+                    },
+                    {
+                        "test":  "test_repo_config_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.66,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_repo_config_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_repo_config_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_repo_config_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_repo_root",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  3.34,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_repo_root.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_repo_root.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_repo_root.detached.err.log"
+                    },
+                    {
+                        "test":  "test_resolved_config_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.82,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_resolved_config_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_resolved_config_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_resolved_config_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_resolved_config_validation_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.71,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_resolved_config_validation_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_resolved_config_validation_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_resolved_config_validation_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_resource_protocol_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  1.02,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_resource_protocol_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_resource_protocol_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_resource_protocol_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_resume_gameplan_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  17.73,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_resume_gameplan_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_resume_gameplan_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_resume_gameplan_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_review_service_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  7.22,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_review_service_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_review_service_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_review_service_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_rewrite_lineage_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  4.34,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_rewrite_lineage_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_rewrite_lineage_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_rewrite_lineage_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_run_classification",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.43,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_run_classification.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_run_classification.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_run_classification.detached.err.log"
+                    },
+                    {
+                        "test":  "test_runtime_create",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.76,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_runtime_create.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_runtime_create.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_runtime_create.detached.err.log"
+                    },
+                    {
+                        "test":  "test_runtime_logging_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.63,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_runtime_logging_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_runtime_logging_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_runtime_logging_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_scheduler_decision_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.8,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_scheduler_decision_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_scheduler_decision_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_scheduler_decision_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_scheduler_recovery_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  1.44,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_scheduler_recovery_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_scheduler_recovery_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_scheduler_recovery_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_session_driver_telemetry",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.84,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_session_driver_telemetry.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_session_driver_telemetry.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_session_driver_telemetry.detached.err.log"
+                    },
+                    {
+                        "test":  "test_session_id_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.75,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_session_id_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_session_id_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_session_id_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_session_meta_state_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.67,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_session_meta_state_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_session_meta_state_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_session_meta_state_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_session_prompt_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  1.78,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_session_prompt_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_session_prompt_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_session_prompt_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_session_result_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  9.67,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_session_result_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_session_result_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_session_result_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_session_timeout",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  1.38,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_session_timeout.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_session_timeout.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_session_timeout.detached.err.log"
+                    },
+                    {
+                        "test":  "test_sourcehut_builds_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.76,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_sourcehut_builds_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_sourcehut_builds_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_sourcehut_builds_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_sourcehut_target_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.86,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_sourcehut_target_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_sourcehut_target_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_sourcehut_target_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_spawn_logic",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.39,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_spawn_logic.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_spawn_logic.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_spawn_logic.detached.err.log"
+                    },
+                    {
+                        "test":  "test_stale_base_invariants",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.36,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_stale_base_invariants.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_stale_base_invariants.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_stale_base_invariants.detached.err.log"
+                    },
+                    {
+                        "test":  "test_start_eligibility_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.64,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_start_eligibility_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_start_eligibility_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_start_eligibility_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_start_point_plan_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.71,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_start_point_plan_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_start_point_plan_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_start_point_plan_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_state_machine_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.5,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_state_machine_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_state_machine_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_state_machine_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_state_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.63,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_state_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_state_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_state_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_stream_parser",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.9,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_stream_parser.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_stream_parser.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_stream_parser.detached.err.log"
+                    },
+                    {
+                        "test":  "test_supervisor_decision_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.74,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_supervisor_decision_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_supervisor_decision_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_supervisor_decision_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_supervisor_guard",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.22,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_supervisor_guard.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_supervisor_guard.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_supervisor_guard.detached.err.log"
+                    },
+                    {
+                        "test":  "test_telemetry_migration",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.39,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_telemetry_migration.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_telemetry_migration.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_telemetry_migration.detached.err.log"
+                    },
+                    {
+                        "test":  "test_term_key_io",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.76,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_term_key_io.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_term_key_io.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_term_key_io.detached.err.log"
+                    },
+                    {
+                        "test":  "test_token_scrub_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.65,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_token_scrub_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_token_scrub_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_token_scrub_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_tui_input",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.65,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_tui_input.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_tui_input.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_tui_input.detached.err.log"
+                    },
+                    {
+                        "test":  "test_tui_render_frame",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.82,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_tui_render_frame.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_tui_render_frame.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_tui_render_frame.detached.err.log"
+                    },
+                    {
+                        "test":  "test_types_state_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.74,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_types_state_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_types_state_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_types_state_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_wontdo_session",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  5.84,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_wontdo_session.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_wontdo_session.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_wontdo_session.detached.err.log"
+                    },
+                    {
+                        "test":  "test_worker_protocol_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  1.06,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_worker_protocol_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_worker_protocol_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_worker_protocol_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_worker_protocol_v3_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.85,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_worker_protocol_v3_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_worker_protocol_v3_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_worker_protocol_v3_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_worker_recovery_prompt",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  13.11,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_worker_recovery_prompt.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_worker_recovery_prompt.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_worker_recovery_prompt.detached.err.log"
+                    },
+                    {
+                        "test":  "test_worker_stream_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  3.23,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_worker_stream_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_worker_stream_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_worker_stream_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_workspace_recovery_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.76,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_workspace_recovery_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_workspace_recovery_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_workspace_recovery_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_worktree_hook_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.83,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_worktree_hook_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_worktree_hook_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_worktree_hook_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_worktree_lifecycle_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  9.17,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_worktree_lifecycle_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_worktree_lifecycle_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_worktree_lifecycle_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_worktree_parser",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.75,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_worktree_parser.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_worktree_parser.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_worktree_parser.detached.err.log"
+                    },
+                    {
+                        "test":  "test_worktree_provision_properties",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.88,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_worktree_provision_properties.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_worktree_provision_properties.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_worktree_provision_properties.detached.err.log"
+                    },
+                    {
+                        "test":  "test_worktree_spawn_retry",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.37,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_worktree_spawn_retry.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_worktree_spawn_retry.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_worktree_spawn_retry.detached.err.log"
+                    },
+                    {
+                        "test":  "test_worktree_start_state_interleavings",
+                        "status":  "passed",
+                        "exit_code":  0,
+                        "elapsed_sec":  0.58,
+                        "source":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_worktree_start_state_interleavings.detached.status.json",
+                        "stdout":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_worktree_start_state_interleavings.detached.out.log",
+                        "stderr":  "C:\\Users\\josep\\.gemini\\antigravity-cli\\brain\\b8373a04-b205-485f-927e-34b8255fe0f9\\scratch\\test_worktree_start_state_interleavings.detached.err.log"
+                    }
+                ],
+    "summary":  {
+                    "passed":  165,
+                    "failed":  0,
+                    "timed_out":  0,
+                    "unverified":  0,
+                    "total":  165
+                }
+}
