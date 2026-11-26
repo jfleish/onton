@@ -32,7 +32,7 @@ let executable path =
   with _ -> false
 
 let () =
-  Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
+  if not Host.is_windows then Sys.set_signal Sys.sigpipe Sys.Signal_ignore;
   let args = Hashtbl.create 16 in
   let rec scan = function
     | [] -> ()
