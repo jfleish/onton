@@ -1,0 +1,19 @@
+(executable
+ (name git_stress_eio)
+ (modules git_stress_eio)
+ (libraries onton eio_main))
+
+(executable
+ (name eio_only_spawn)
+ (modules eio_only_spawn)
+ (libraries eio_main))
+
+(executable
+ (name native_backend_probe)
+ (modules native_backend_probe)
+ (libraries onton eio_main))
+
+(executable
+ (name native_windows_only)
+ (modules native_windows_only)
+ (libraries onton eio_main))

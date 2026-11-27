@@ -197,80 +197,63 @@ let run_sync ?(timeout = 120.) ~env args =
         in
         (status, Buffer.contents stdout, Buffer.contents stderr))
 
-let run_status_windows ?cwd ?stdout ?stderr ~process_mgr ?clock ~env args =
-  let sleep =
-    match clock with
-    | Some clock -> Eio.Time.sleep clock
-    | None -> Eio_unix.sleep
-  in
+let run_status_windows ?cwd ?stdout ?stderr ~process_mgr:_ ?clock:_ ~env args =
   let stdout = Option.value stdout ~default:(Buffer.create 256) in
   let stderr = Option.value stderr ~default:(Buffer.create 256) in
   let args = Host.windows_command args in
   Eio.Cancel.sub (fun caller ->
       Eio.Cancel.protect (fun () ->
           Eio.Switch.run (fun sw ->
-              let stdin_r, stdin_w = Eio_unix.Net.socketpair_stream ~sw () in
-              let stdout_r, stdout_w = Eio_unix.Net.socketpair_stream ~sw () in
-              let stderr_r, stderr_w = Eio_unix.Net.socketpair_stream ~sw () in
               Eio.Cancel.check caller;
-              let child =
-                retry_transient_spawn (fun () ->
-                    Eio.Cancel.check caller;
-                    Eio.Process.spawn ~sw process_mgr ~env ?cwd ~stdin:stdin_r
-                      ~stdout:stdout_w ~stderr:stderr_w args)
-              in
-              let child_pid = Eio.Process.pid child in
-              let job_attached = Host.attach_job child_pid in
-              Eio.Flow.close stdin_r;
-              Eio.Flow.close stdout_w;
-              Eio.Flow.close stderr_w;
-              Eio.Flow.close stdin_w;
-              let read_flow flow buffer =
-                (* [Cstruct.of_bytes] copies into a fresh bigarray, so reads
-                   must go into a Cstruct and be copied out of it. *)
-                let chunk = Cstruct.create 8192 in
+              let handles = Windows_process.spawn ?cwd ~env args in
+              let read_pipe handle buffer =
+                let chunk = Bytes.create 8192 in
                 let rec loop () =
-                  try
-                    let n = Eio.Flow.single_read flow chunk in
-                    if n > 0 then (
-                      Buffer.add_string buffer
-                        (Cstruct.to_string chunk ~off:0 ~len:n);
-                      loop ())
-                  with End_of_file | Eio.Exn.Io _ -> ()
+                  let n = Windows_process.read handle chunk in
+                  if n > 0 then (
+                    Buffer.add_subbytes buffer chunk ~pos:0 ~len:n;
+                    loop ())
                 in
                 loop ()
               in
               let waited =
-                Eio.Fiber.fork_promise ~sw (fun () -> Eio.Process.await child)
+                Eio.Fiber.fork_promise ~sw (fun () ->
+                    Windows_process.wait handles.process)
               in
               let drained =
                 Eio.Fiber.fork_promise ~sw (fun () ->
                     Eio.Fiber.both
-                      (fun () -> read_flow stdout_r stdout)
-                      (fun () -> read_flow stderr_r stderr))
+                      (fun () -> read_pipe handles.stdout stdout)
+                      (fun () -> read_pipe handles.stderr stderr))
               in
-              Stdlib.Fun.protect
-                ~finally:(fun () ->
-                  Eio.Cancel.protect (fun () ->
-                      if job_attached then Host.terminate_job child_pid
-                      else Host.stop_process child_pid;
-                      ignore (Eio.Promise.await_exn waited);
-                      if job_attached then Host.close_job child_pid);
-                  ignore (Eio.Promise.await_exn drained))
-                (fun () ->
-                  let status =
+              let cleanup () =
+                Eio.Cancel.protect (fun () ->
+                    if not (Eio.Promise.is_resolved waited) then
+                      if Int64.compare handles.job 0L <> 0 then
+                        Windows_process.terminate handles.job
+                      else Windows_process.terminate_process handles.process;
+                    ignore (Eio.Promise.await_exn waited);
+                    ignore (Eio.Promise.await_exn drained);
+                    Windows_process.close handles.stdout;
+                    Windows_process.close handles.stderr;
+                    if Int64.compare handles.job 0L <> 0 then
+                      Windows_process.close handles.job;
+                    Windows_process.close handles.process)
+              in
+              Stdlib.Fun.protect ~finally:cleanup (fun () ->
+                  let code =
                     Eio.Fiber.first
                       (fun () -> Eio.Promise.await_exn waited)
                       (fun () ->
                         let rec watch () =
                           Eio.Cancel.check caller;
-                          sleep 0.01;
+                          Eio.Fiber.yield ();
                           watch ()
                         in
                         watch ())
                   in
                   ignore (Eio.Promise.await_exn drained);
-                  (status, Buffer.contents stdout, Buffer.contents stderr)))))
+                  (`Exited code, Buffer.contents stdout, Buffer.contents stderr)))))
 
 let run_status ?cwd ?stdout ?stderr ~process_mgr ?clock ~env args =
   if Host.is_windows then
