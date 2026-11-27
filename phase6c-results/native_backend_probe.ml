@@ -7,7 +7,7 @@ let () =
       Eio.Time.with_timeout clock 0.25 (fun () ->
           Ok
             (Onton.Process_tree.run ~process_mgr ~clock ~env:(Unix.environment ())
-               [ "cmd.exe"; "/d"; "/c"; "ping"; "-n"; "10"; "127.0.0.1" ]))
+               [ "cmd.exe"; "/d"; "/c"; "start"; ""; "/b"; "ping"; "-n"; "30"; "127.0.0.1" ]))
     with
     | Ok _ -> false
     | Error `Timeout -> true
