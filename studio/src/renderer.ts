@@ -21,11 +21,11 @@ function taskCard(item: StudioTask) {
   return `<button class="task-card ${selectedTask === item.id ? "selected" : ""}" data-task="${item.id}">
     <div class="task-head"><span class="task-id">${item.id.toUpperCase()}</span>${badge(item.status)}</div>
     <strong>${esc(item.title)}</strong><span class="task-owner">${esc(item.owner)} · ${item.progress}% complete</span>
-    <div class="progress"><i style="width:${item.progress}%"></i></div>
+    <div class="progress"><i class="progress-fill progress-${item.progress}"></i></div>
   </button>`;
 }
 function agentCard(item: StudioAgent) {
-  return `<button class="agent-card" data-agent="${item.id}"><span class="avatar" style="--accent:${item.accent}">${item.name.slice(0, 1)}</span><span class="agent-copy"><strong>${esc(item.name)}</strong><small>${esc(item.role)}</small></span>${badge(item.status)}<span class="chevron">›</span></button>`;
+  return `<button class="agent-card" data-agent="${item.id}"><span class="avatar accent-${item.id}">${item.name.slice(0, 1)}</span><span class="agent-copy"><strong>${esc(item.name)}</strong><small>${esc(item.role)}</small></span>${badge(item.status)}<span class="chevron">›</span></button>`;
 }
 function eventRow(item: StudioEvent) {
   return `<div class="event-row"><span class="event-dot ${item.kind}"></span><div><strong>${esc(item.title)}</strong><p>${esc(item.detail)}</p></div><time>${esc(item.time)}</time></div>`;
@@ -33,7 +33,7 @@ function eventRow(item: StudioEvent) {
 function graph() {
   const positions: Record<string, [number, number]> = { "task-1": [95, 100], "task-2": [315, 100], "task-3": [535, 100], "task-4": [205, 255], "task-5": [425, 255] };
   const lines = snapshot.tasks.flatMap((t) => t.dependsOn.map((dep) => { const [x1, y1] = positions[dep]; const [x2, y2] = positions[t.id]; return `<path d="M${x1 + 76} ${y1 + 35} C${x1 + 140} ${y1 + 35} ${x2 - 40} ${y2 + 35} ${x2} ${y2 + 35}"/>`; })).join("");
-  return `<div class="graph"><svg viewBox="0 0 700 355" aria-label="Gameplan dependency graph">${lines}</svg>${snapshot.tasks.map((t) => { const [x, y] = positions[t.id]; return `<button class="graph-node ${t.status} ${selectedTask === t.id ? "selected" : ""}" style="left:${x}px;top:${y}px" data-task="${t.id}"><span>${t.id.replace("task-", "0")}</span><strong>${esc(t.title)}</strong><small>${statusLabel(t.status)}</small></button>`; }).join("")}</div>`;
+  return `<div class="graph"><svg viewBox="0 0 700 355" aria-label="Gameplan dependency graph">${lines}</svg>${snapshot.tasks.map((t) => { const [x, y] = positions[t.id]; return `<button class="graph-node ${t.status} pos-${t.id} ${selectedTask === t.id ? "selected" : ""}" data-task="${t.id}"><span>${t.id.replace("task-", "0")}</span><strong>${esc(t.title)}</strong><small>${statusLabel(t.status)}</small></button>`; }).join("")}</div>`;
 }
 function taskInspector() {
   const current = task(selectedTask);
@@ -52,7 +52,7 @@ function pageContent() {
 }
 function transcript(item: StudioAgent) {
   const lines = snapshot.transcripts[item.id] ?? [];
-  return `<div class="transcript-head"><span class="avatar" style="--accent:${item.accent}">${item.name.slice(0, 1)}</span><div><h2>${esc(item.name)}</h2><p>${esc(item.role)} · ${badge(item.status)}</p></div></div><div class="chat">${lines.map((line, i) => `<div class="message ${i % 2 ? "agent-message" : "system-message"}"><span>${i % 2 ? item.name : "SYSTEM"}</span><p>${esc(line)}</p></div>`).join("")}</div><div class="composer"><input placeholder="Ask about this run..."/><button class="primary" data-action="send">Send</button></div>`;
+  return `<div class="transcript-head"><span class="avatar accent-${item.id}">${item.name.slice(0, 1)}</span><div><h2>${esc(item.name)}</h2><p>${esc(item.role)} · ${badge(item.status)}</p></div></div><div class="chat">${lines.map((line, i) => `<div class="message ${i % 2 ? "agent-message" : "system-message"}"><span>${i % 2 ? item.name : "SYSTEM"}</span><p>${esc(line)}</p></div>`).join("")}</div><div class="composer"><input placeholder="Ask about this run..."/><button class="primary" data-action="send">Send</button></div>`;
 }
 function render() {
   app.innerHTML = `<nav class="sidebar"><div class="brand"><span class="brand-mark">✦</span><span>onton <b>studio</b></span></div><div class="nav-section"><span class="nav-label">WORKSPACE</span>${navItem("dashboard", "Dashboard")}${navItem("gameplan", "Gameplan")}${navItem("agents", "Agents")}${navItem("timeline", "Timeline")}${navItem("transcript", "Transcripts")}</div><div class="nav-section bottom"><span class="nav-label">OPERATIONS</span>${navItem("approvals", "Approvals")}<div class="runtime"><span class="pulse"></span><span><b>Simulation mode</b><small>Backend disconnected</small></span></div></div></nav><main><header class="topbar"><div class="crumb"><span class="dot"></span><strong>${esc(snapshot.project.name)}</strong><span>/</span><span>${esc(snapshot.project.branch)}</span></div><div class="top-actions"><span class="simulated-pill">● SIMULATED RUN</span><button class="icon-button" data-action="help">?</button><span class="avatar user">OP</span></div></header>${pageContent()}${toast ? `<div class="toast">${esc(toast)}</div>` : ""}</main>`;
