@@ -32,25 +32,31 @@ export interface StudioEvent {
   agentId?: string;
 }
 
+export type AdapterMode = "local" | "simulated";
+export type RunStatus = "idle" | "running" | "completed" | "failed" | "cancelled";
+
 export interface StudioSnapshot {
-  project: { name: string; branch: string; updatedAt: string };
+  version: typeof STUDIO_ADAPTER_VERSION;
+  mode: AdapterMode;
+  project: { root: string; name: string; branch: string; dirty: boolean; updatedAt: string; gameplanPath: string | null };
   tasks: StudioTask[];
   agents: StudioAgent[];
   events: StudioEvent[];
   transcripts: Record<string, string[]>;
+  run: { id: string | null; status: RunStatus; startedAt: string | null; endedAt: string | null };
 }
 
 export interface StudioAdapter {
   readonly version: typeof STUDIO_ADAPTER_VERSION;
   getSnapshot(): Promise<StudioSnapshot>;
+  runSimulation(): Promise<StudioSnapshot>;
+  stopRun(): Promise<StudioSnapshot>;
+  onEvent(listener: (event: StudioEvent) => void): () => void;
 }
 
 declare global {
   interface Window {
-    ontonStudio: {
-      adapterVersion: string;
-      getSnapshot(): Promise<StudioSnapshot>;
-    };
+    ontonStudio: StudioAdapter & { adapterVersion: typeof STUDIO_ADAPTER_VERSION };
   }
 }
 

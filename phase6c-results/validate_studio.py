@@ -11,10 +11,11 @@ with sync_playwright() as p:
     page.on("console", lambda msg: errors.append(f"console:{msg.type}:{msg.text}") if msg.type == "error" else None)
     page.on("pageerror", lambda exc: errors.append(f"pageerror:{exc}"))
     page.wait_for_selector(".brand")
+    assert "onton-windows" in page.locator("h1").inner_text()
     page.screenshot(path=str(root / "01-dashboard.png"), full_page=True)
-    results.append(("dashboard", page.locator("h1").inner_text()))
+    results.append(("local-discovery", page.locator(".runtime").inner_text()))
 
-    for screen, expected in [("gameplan", "Execution map"), ("agents", "Agents in the loop"), ("timeline", "What happened"), ("transcript", "Agent conversations"), ("approvals", "Decision queue")]:
+    for screen, expected in [("gameplan", "Execution map"), ("agents", "Agents in the loop"), ("timeline", "What happened"), ("transcript", "Agent conversations"), ("approvals", "Execution gate")]:
         page.locator(f"[data-page='{screen}']").first.click()
         page.wait_for_selector("h1")
         actual = page.locator("h1").inner_text()
@@ -23,24 +24,22 @@ with sync_playwright() as p:
         results.append((screen, actual))
 
     page.locator("[data-page='gameplan']").first.click()
-    page.locator("[data-task='task-2']").first.click()
-    assert page.locator(".inspector h2").inner_text() == "Harden process capture"
-    results.append(("graph-node-selection", "pass"))
-
-    page.locator("[data-page='agents']").first.click()
-    page.locator("[data-agent='agent-2']").click()
-    assert page.locator(".transcript-head h2").inner_text() == "Atlas"
-    results.append(("agent-transcript", "pass"))
-
-    page.locator("[data-page='approvals']").first.click()
-    page.locator("[data-action='approve']").click()
-    assert "Approved in simulation" in page.locator(".toast").inner_text()
-    results.append(("approval-action", "pass"))
+    assert page.locator(".graph-node").count() > 0
+    page.locator(".graph-node").first.click()
+    assert page.locator(".inspector h2").count() == 1
+    results.append(("real-gameplan-graph", f"{page.locator('.graph-node').count()} nodes"))
 
     page.locator("[data-page='dashboard']").first.click()
     page.locator("[data-action='simulate']").click()
-    assert "Simulation queued" in page.locator(".toast").inner_text()
-    results.append(("simulation-action", "pass"))
+    assert "Local simulation started" in page.locator(".toast").inner_text()
+    assert "running" in page.locator(".runtime").inner_text().lower()
+    page.locator("[data-action='stop']").click()
+    assert "cancelled" in page.locator(".runtime").inner_text().lower()
+    results.append(("local-run-lifecycle", "running -> cancelled"))
+
+    page.locator("[data-page='approvals']").first.click()
+    assert "disabled" in page.locator(".badge").inner_text().lower()
+    results.append(("approval-gate", "disabled"))
 
     page.set_viewport_size({"width": 900, "height": 700})
     page.wait_for_timeout(200)
@@ -54,7 +53,7 @@ with sync_playwright() as p:
     browser.close()
 
 report = root / "REPORT.md"
-report.write_text("# Onton Studio validation\n\n" + "\n".join(f"- {name}: {value}" for name, value in results) + "\n\n" + f"- console/page errors: {len(errors)}\n" + "\n".join(f"  - {e}" for e in errors) + "\n", encoding="utf-8")
+report.write_text("# Onton Studio validation\n\n" + "\n".join(f"- {name}: {value}" for name, value in results) + "\n\n" + f"- console/page errors: {len(errors)}\n" + "\n".join(f"  - {e}" for e in errors) + "\n\n## Scope\n\n- Real local project discovery and Git metadata: connected.\n- Local persisted run lifecycle and event stream: connected.\n- Coordinator, worker, Codex execution, approvals, pushes, and merges: disabled.\n", encoding="utf-8")
 if errors:
     raise SystemExit("; ".join(errors))
 print(f"checks={len(results)} screenshots={len(list(root.glob('*.png')))} errors=0")
