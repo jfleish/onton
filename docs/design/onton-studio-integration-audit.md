@@ -1,7 +1,7 @@
 # Onton Studio integration architecture audit
 
-**Repository:** `C:\Users\josep\onton-windows`  
-**Branch:** `studio-development`  
+**Repository:** `C:\Users\josep\onton-windows`
+**Branch:** `studio-development`
 **Audit scope:** read-only source audit; no production source changes and no full test-suite run.
 
 ## Executive recommendation
@@ -316,39 +316,39 @@ Ranked by shortest-path impact:
 
 ### Milestone 0 — freeze contracts and policy
 
-**Dependency:** none.  
+**Dependency:** none.
 **Acceptance:** written policy states local mode cannot read production credentials, cannot contact external forge endpoints, and cannot mark a task complete without real backend/process evidence.
 
 ### Milestone 1 — local Forge.S acceptance seam
 
-**Dependency:** existing Forge.S and main capability construction.  
+**Dependency:** existing Forge.S and main capability construction.
 **Acceptance:** a disposable bare remote and local forge helper implement only the methods required by a one-patch Codex run; unsupported review/merge operations fail closed; production GitHub/SourceHut behavior is unchanged; no external network is reachable.
 
 The implementation should be selected explicitly by a test/local profile, not by an empty token or a fake GitHub owner.
 
 ### Milestone 2 — successful CLI headless run
 
-**Dependency:** Milestone 1.  
+**Dependency:** Milestone 1.
 **Acceptance:** actual built `main.exe --headless --headless-transcript --no-refresh` runs one real Codex task in a disposable worktree, creates a commit, records transcript/activity, persists completion, and exits successfully. Capture bare-remote refs and all Onton data as evidence.
 
 ### Milestone 3 — typed headless read model
 
-**Dependency:** Milestone 2.  
+**Dependency:** Milestone 2.
 **Acceptance:** Studio receives canonical run/task/agent transitions and transcript chunks without regex classification; final unterminated JSONL records are flushed; persisted sequence/offset handling is deterministic.
 
 ### Milestone 4 — typed control client and cancellation
 
-**Dependency:** authenticated control transport and Milestone 3.  
+**Dependency:** authenticated control transport and Milestone 3.
 **Acceptance:** Electron discovers endpoint metadata, authenticates, sends a typed cancellation/guidance command, observes an acknowledged response, and only falls back to process-tree termination after timeout. Unix socket behavior and Windows token behavior remain covered.
 
 ### Milestone 5 — persistence/restart/recovery
 
-**Dependency:** Milestones 2–4.  
+**Dependency:** Milestones 2–4.
 **Acceptance:** stop during an active task, verify worktree/process cleanup and persisted terminal state; restart Studio and verify it reads Onton snapshot/events/transcripts; if attach is unsupported, it must explicitly fence the run and explain why rather than showing stale running state.
 
 ### Milestone 6 — opt-in Studio support gate
 
-**Dependency:** all previous milestones and focused Playwright acceptance.  
+**Dependency:** all previous milestones and focused Playwright acceptance.
 **Acceptance:** real mode is enabled only with an explicit opt-in/profile; default Studio remains safe local/simulation mode; Electron security settings are unchanged; successful Codex, failure, cancellation, cleanup, and restart evidence are committed.
 
 ---
