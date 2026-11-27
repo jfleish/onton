@@ -53,13 +53,18 @@ let validate_resolved_config ~project_name ~forge ~backend ~github_token
       [
         ( Base.String.is_empty (Base.String.strip project_name),
           "project name is required" );
-        ( not (Base.List.mem [ "github"; "sourcehut" ] forge ~equal:String.equal),
-          Printf.sprintf "--forge must be github or sourcehut (got %S)" forge );
+        ( not
+            (Base.List.mem
+               [ "github"; "sourcehut"; "local" ]
+               forge ~equal:String.equal),
+          Printf.sprintf "--forge must be github, sourcehut, or local (got %S)"
+            forge );
         ( not (Base.List.mem known_backends backend ~equal:String.equal),
           Printf.sprintf "--backend must be one of: %s (got %S)"
             (String.concat ", " known_backends)
             backend );
-        ( Base.String.is_empty (Base.String.strip github_token),
+        ( (not (String.equal forge "local"))
+          && Base.String.is_empty (Base.String.strip github_token),
           if String.equal forge "sourcehut" then
             "--token / SRHT_TOKEN is required"
           else "--token / GITHUB_TOKEN is required" );

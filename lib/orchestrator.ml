@@ -341,6 +341,9 @@ let complete t patch_id =
                   };
           })
 
+let complete_local t patch_id =
+  update_agent (complete t patch_id) patch_id ~f:Patch_agent.clear_session_completion
+
 let prepare_rebase_after_checkpoint_failure t patch_id =
   match find_agent t patch_id with
   | Some a

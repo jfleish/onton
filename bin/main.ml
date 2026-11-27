@@ -289,7 +289,8 @@ let resolve_forge_credentials ~forge ~github_token ~repo_root =
   in
   let token =
     let t = Base.String.strip github_token in
-    if not (Base.String.is_empty t) then t
+    if String.equal forge "local" then ""
+    else if not (Base.String.is_empty t) then t
     else if String.equal forge "sourcehut" then
       Managed_repo.infer_sourcehut_token ()
     else Managed_repo.infer_github_token ()
@@ -594,6 +595,11 @@ let resolve_config ~claim_project ~project ~gameplan_path ~forge ~github_token
           let forge = if String.equal forge "auto" then "github" else forge in
           let owner = normalize_forge_owner ~forge owner in
           let target_error =
+             if String.equal forge "local" && List.length gameplan.patches <> 1 then
+               Some
+                 "--forge local currently supports exactly one patch for the
+                  bounded local acceptance profile"
+             else
             if Base.String.is_empty owner || Base.String.is_empty repo then
               Some
                 (Printf.sprintf
@@ -606,7 +612,8 @@ let resolve_config ~claim_project ~project ~gameplan_path ~forge ~github_token
               match
                 if String.equal forge "sourcehut" then
                   Sourcehut_target.validate_target ~owner ~repo
-                else Github_target.validate_target ~owner ~repo
+                else if String.equal forge "local" then Ok ()
+                 else Github_target.validate_target ~owner ~repo
               with
               | Ok () -> None
               | Error msg ->
@@ -618,7 +625,24 @@ let resolve_config ~claim_project ~project ~gameplan_path ~forge ~github_token
           match target_error with
           | Some msg -> Error [ msg ]
           | None -> (
-              (* [--repo] is ignored when [--gameplan] is passed: the gameplan
+              if String.equal forge "local" then
+                 let local_root =
+                   Repo_root.normalize (Option.value repo_root ~default:".")
+                 in
+                 if not (Stdlib.Sys.file_exists local_root) then
+                   Error
+                     [ Printf.sprintf "Local repository does not exist: %s" local_root ]
+                 else
+                   let main_branch = resolve_branch ~repo_root:local_root main_branch in
+                   let repo_coords =
+                     { forge; github_token = ""; github_owner = owner;
+                       github_repo = repo; repo_root = local_root; url_scheme = None }
+                   in
+                   finalize_run ~project_name ~repo_coords ~run_knobs
+                     ~backend_inputs:(cli_backend_inputs ()) ~main_branch
+                     ~gameplan ~publish_gameplan:false ~source_path:(Some gp_path)
+               else (
+               (* [--repo] is ignored when [--gameplan] is passed: the gameplan
                itself is the source of truth for which repo to operate on, and
                onton manages its own checkout under the project data dir. *)
               (match repo_root with
@@ -662,7 +686,7 @@ let resolve_config ~claim_project ~project ~gameplan_path ~forge ~github_token
                   in
                   finalize_run ~project_name ~repo_coords ~run_knobs
                     ~backend_inputs:(cli_backend_inputs ()) ~main_branch
-                    ~gameplan ~publish_gameplan ~source_path:(Some gp_path))))
+                    ~gameplan ~publish_gameplan ~source_path:(Some gp_path)))))
   | Some proj, None -> (
       let proj = claim_project proj in
       if not (Project_store.project_exists proj) then
@@ -945,7 +969,9 @@ let construct_capabilities ~net (setup : runtime_setup) =
     config
   in
   let forge : (module Onton.Forge.S) =
-    if String.equal forge_name "sourcehut" then
+    if String.equal forge_name "local" then
+      Local_forge.make ~owner:github_owner ~repo:github_repo
+    else if String.equal forge_name "sourcehut" then
       let changes =
         Runtime.read setup.runtime (fun snapshot ->
             Orchestrator.all_agents snapshot.Runtime.orchestrator
@@ -1877,6 +1903,7 @@ let forge_arg =
         (enum
            [
              ("auto", "auto"); ("github", "github"); ("sourcehut", "sourcehut");
+              ("local", "local");
            ])
         "auto"
     & info [ "forge" ] ~docv:"FORGE"

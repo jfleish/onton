@@ -1641,8 +1641,34 @@ module Make (Forge : Forge.S) (W : Worktree.S) (Env : Runner_env.S) = struct
                                   log_event runtime ~patch_id
                                     "Descendant branch published; waiting for \
                                      HEAD checks")
-                                else
-                                  (* Supervisor-owned PR creation: the agent
+                                else if String.equal Forge.name "local" then (
+                                   log_event runtime ~patch_id
+                                     "Local completion accepted from committed \
+                                      worktree state";
+                                                                       match
+                                      Runtime.update_persisting runtime
+                                        ~persist:
+                                          (Persistence.save_snapshot
+                                             ~path:
+                                               (Project_store.snapshot_path
+                                                  project_name))
+                                        (fun snap ->
+                                          ({ snap with
+                                             Runtime.orchestrator =
+                                               Orchestrator.complete_local
+                                                 snap.Runtime.orchestrator
+                                                 patch_id },
+                                           ()))
+                                    with
+                                    | Ok () ->
+                                        Eio.Time.sleep Env.clock 1.0;
+                                        Stdlib.exit 0
+                                    | Error reason ->
+                                        log_event runtime ~patch_id
+                                          ("Local completion persistence failed: " ^
+                                           reason))
+                                 else
+                                   (* Supervisor-owned PR creation: the agent
                                  commits and the supervisor pushed at session
                                  end; now we open the draft PR with a
                                  gameplan-derived title and body.

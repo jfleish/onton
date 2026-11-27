@@ -799,6 +799,10 @@ val record_session_completion : t -> Session_result.completion -> t
 (** Record the backend result and observed local revision before publication. A
     missing revision is unknown evidence, not proof of an absent branch. *)
 
+val clear_session_completion : t -> t
+(** Consume a locally accepted completion after its durable branch evidence was
+    recorded, without claiming forge publication. *)
+
 val reconciliation_hold_reason : t -> string option
 (** Terminal patch state suspends reconciliation execution while retaining its
     checkpoint. Resuming work must observe Git through the recovery protocol. *)

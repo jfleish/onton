@@ -1481,6 +1481,9 @@ let defer_forge_revision_pair t =
 let record_session_completion t completion =
   { t with session_completion = Some completion }
 
+let clear_session_completion t =
+  { t with session_completion = None }
+
 let migrate_legacy_branch_state ?(revision = `Null) ~main_branch ~owner_missing
     ~anchors ~published t =
   let t =

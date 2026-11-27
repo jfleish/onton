@@ -91,6 +91,10 @@ val assigned_context :
 
 val complete : t -> Patch_id.t -> t
 
+val complete_local : t -> Patch_id.t -> t
+(** Complete a local-profile task after its committed worktree evidence is
+    recorded; consumes the captured session completion without forge claims. *)
+
 val prepare_rebase_after_checkpoint_failure : t -> Patch_id.t -> t * bool
 (** Enqueue a WONTDO Rebase and return [true] when the retry marker is set, the
     refusal is cleared, Rebase is the current operation, and branch
