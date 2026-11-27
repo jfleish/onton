@@ -1,10 +1,17 @@
 {
   "private": true,
+  "scripts": {
+    "studio:build": "tsc -p studio/tsconfig.json",
+    "studio:start": "npm run studio:build && electron studio/main.cjs",
+    "studio:check": "tsc -p studio/tsconfig.json --noEmit"
+  },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1028.0",
     "@aws-sdk/s3-request-presigner": "^3.1028.0"
   },
   "devDependencies": {
-    "@types/node": "^25.6.0"
+    "@types/node": "^25.6.0",
+    "electron": "^45.5.0",
+    "typescript": "^7.0.2"
   }
 }

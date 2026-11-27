@@ -6,6 +6,7 @@ _opam/
 .claude
 .vercel
 node_modules/
+studio/dist/
 .env
 *.pem
 private.pem
