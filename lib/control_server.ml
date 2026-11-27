@@ -111,51 +111,109 @@ let execute runtime ~snapshot_path = function
          Runtime_logging.log_event runtime ~patch_id message);
       outcome
 
+let command_response runtime ~snapshot_path flow =
+  try
+    let reader = Eio.Buf_read.of_flow ~max_size:4096 flow in
+    let line = Eio.Buf_read.line reader in
+    match Yojson.Safe.from_string line with
+    | json -> (
+        match Control_command.decode json with
+        | Error _ -> response ~id:"" ~status:"invalid_command"
+        | Ok command ->
+            response ~id:(Control_command.id command)
+              ~status:(execute runtime ~snapshot_path command))
+  with
+  | End_of_file | Eio.Buf_read.Buffer_limit_exceeded | Yojson.Json_error _ ->
+      response ~id:"" ~status:"invalid_command"
+
 let handle runtime ~snapshot_path flow =
   let reply =
     if not (authorized_peer flow) then response ~id:"" ~status:"unauthorized"
-    else
-      try
-        let reader = Eio.Buf_read.of_flow ~max_size:4096 flow in
-        let line = Eio.Buf_read.line reader in
-        match Yojson.Safe.from_string line with
-        | json -> (
-            match Control_command.decode json with
-            | Error _ -> response ~id:"" ~status:"invalid_command"
-            | Ok command ->
-                response
-                  ~id:(Control_command.id command)
-                  ~status:(execute runtime ~snapshot_path command))
-      with
-      | End_of_file | Eio.Buf_read.Buffer_limit_exceeded | Yojson.Json_error _
-      ->
-        response ~id:"" ~status:"invalid_command"
+    else command_response runtime ~snapshot_path flow
   in
   Eio.Flow.copy_string reply flow
 
-let run ~net ~runtime ~snapshot_path ~path () =
+let windows_token () =
+  Base64.encode_string (Bytes.to_string (Host.windows_random_bytes 32))
+
+let write_windows_endpoint path port token =
+  let endpoint =
+    Yojson.Safe.to_string
+      (`Assoc
+        [ ("version", `Int 1); ("transport", `String "tcp");
+          ("host", `String "127.0.0.1"); ("port", `Int port);
+          ("token", `String token) ])
+    ^ "\n"
+  in
+  let channel =
+    Stdlib.open_out_gen [ Open_wronly; Open_creat; Open_trunc; Open_binary ] 0o600 path
+  in
+  Stdlib.Fun.protect
+    ~finally:(fun () -> Stdlib.close_out_noerr channel)
+    (fun () -> Stdlib.output_string channel endpoint; Stdlib.flush channel)
+
+let run_windows ~net ~runtime ~snapshot_path ~path () =
   let parent = Stdlib.Filename.dirname path in
   if Stdlib.Filename.is_relative path then
-    invalid_arg "control socket path must be absolute";
+    invalid_arg "control endpoint path must be absolute";
   (try Unix.mkdir parent 0o700 with Unix.Unix_error (Unix.EEXIST, _, _) -> ());
   if not (Host.owner_only_dir_ok parent) then
-    invalid_arg "control socket parent must be an owner-only directory";
+    invalid_arg "control endpoint parent must be an owner-only directory";
   Project_store.ensure_dir (Stdlib.Filename.dirname snapshot_path);
-  let bound = ref false in
+  let token = windows_token () in
   Stdlib.Fun.protect
     ~finally:(fun () ->
-      if !bound then
-        try Unix.unlink path with Unix.Unix_error (Unix.ENOENT, _, _) -> ())
+      try Unix.unlink path with Unix.Unix_error (Unix.ENOENT, _, _) -> ())
     (fun () ->
       Eio.Switch.run @@ fun sw ->
       let socket =
-        Eio.Net.listen ~sw ~backlog:16 ~reuse_addr:true net (`Unix path)
+        Eio.Net.listen ~sw ~backlog:16 ~reuse_addr:true net
+          (`Tcp (Eio.Net.Ipaddr.V4.loopback, 0))
       in
-      bound := true;
-      Unix.chmod path 0o600;
+      let port =
+        match Eio.Net.listening_addr socket with
+        | `Tcp (_, port) -> port
+        | _ -> failwith "control endpoint did not bind TCP"
+      in
+      write_windows_endpoint path port token;
       Eio.Net.run_server ~max_connections:16
         ~on_error:(fun ex ->
-          Stdlib.Printf.eprintf "onton control socket: %s\n%!"
-            (Exn.to_string ex))
+          Stdlib.Printf.eprintf "onton control endpoint: %s\n%!" (Exn.to_string ex))
         socket
-        (fun flow _ -> handle runtime ~snapshot_path flow))
+        (fun flow _ ->
+          let reply =
+            try
+              let reader = Eio.Buf_read.of_flow ~max_size:4096 flow in
+              if not (String.equal (Eio.Buf_read.line reader) token) then
+                response ~id:"" ~status:"unauthorized"
+              else command_response runtime ~snapshot_path flow
+            with End_of_file | Eio.Buf_read.Buffer_limit_exceeded | Yojson.Json_error _ ->
+              response ~id:"" ~status:"invalid_command"
+          in
+          Eio.Flow.copy_string reply flow))
+
+let run ~net ~runtime ~snapshot_path ~path () =
+  if Host.is_windows then run_windows ~net ~runtime ~snapshot_path ~path ()
+  else (
+    let parent = Stdlib.Filename.dirname path in
+    if Stdlib.Filename.is_relative path then
+      invalid_arg "control socket path must be absolute";
+    (try Unix.mkdir parent 0o700 with Unix.Unix_error (Unix.EEXIST, _, _) -> ());
+    if not (Host.owner_only_dir_ok parent) then
+      invalid_arg "control socket parent must be an owner-only directory";
+    Project_store.ensure_dir (Stdlib.Filename.dirname snapshot_path);
+    let bound = ref false in
+    Stdlib.Fun.protect
+      ~finally:(fun () ->
+        if !bound then
+          try Unix.unlink path with Unix.Unix_error (Unix.ENOENT, _, _) -> ())
+      (fun () ->
+        Eio.Switch.run @@ fun sw ->
+        let socket = Eio.Net.listen ~sw ~backlog:16 ~reuse_addr:true net (`Unix path) in
+        bound := true;
+        Unix.chmod path 0o600;
+        Eio.Net.run_server ~max_connections:16
+          ~on_error:(fun ex ->
+            Stdlib.Printf.eprintf "onton control socket: %s\n%!" (Exn.to_string ex))
+          socket
+          (fun flow _ -> handle runtime ~snapshot_path flow)))

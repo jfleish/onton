@@ -32,12 +32,13 @@ export interface StudioEvent {
   agentId?: string;
 }
 
-export type AdapterMode = "local" | "simulated";
+export type AdapterMode = "local" | "simulated" | "real";
 export type RunStatus = "idle" | "running" | "completed" | "failed" | "cancelled";
 
 export interface StudioSnapshot {
   version: typeof STUDIO_ADAPTER_VERSION;
   mode: AdapterMode;
+  realEnabled: boolean;
   project: { root: string; name: string; branch: string; dirty: boolean; updatedAt: string; gameplanPath: string | null };
   tasks: StudioTask[];
   agents: StudioAgent[];
@@ -50,6 +51,7 @@ export interface StudioAdapter {
   readonly version: typeof STUDIO_ADAPTER_VERSION;
   getSnapshot(): Promise<StudioSnapshot>;
   runSimulation(): Promise<StudioSnapshot>;
+  runReal(): Promise<StudioSnapshot>;
   stopRun(): Promise<StudioSnapshot>;
   onEvent(listener: (event: StudioEvent) => void): () => void;
 }

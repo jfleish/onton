@@ -1,7 +1,7 @@
 # Onton Studio validation
 
 - local-discovery: Local adapter
-local · Idle
+- simulated · Cancelled
 - gameplan: Execution map
 - agents: Agents in the loop
 - timeline: What happened
@@ -14,11 +14,10 @@ local · Idle
 
 - console/page errors: 0
 
-
 ## Scope
 
 - Real local project discovery and Git metadata: connected.
-- Local persisted run lifecycle and event stream: connected.
-- Coordinator, worker, Codex execution, approvals, pushes, and merges: disabled.
-- Disposable coordinator/worker fixture attempt: blocked on the existing Unix-only fixture (`/tmp` path and Unix process assumptions) under Windows; no repository or forge mutation occurred.
-- Focused OCaml regressions: backend smoke, process cancellation, worker Git recovery, and persistence properties all passed.
+- Local persisted simulation lifecycle and event stream: connected.
+- Guarded real mode exposes a distinct real Onton action only with `ONTON_STUDIO_ENABLE_REAL=1`.
+- Real-mode invalid-gameplan lifecycle was exercised through the actual built `main.exe`: process failure and stderr events persisted.
+- Coordinator, worker, Codex success execution, approvals, pushes, and merges remain disabled by default.

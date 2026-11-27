@@ -1,41 +1,40 @@
-# Windows coordinator acceptance
-
-Date: local validation on `studio-development`
+# Windows coordinator/control acceptance
 
 ## Root cause
 
-There were two independent Windows-only transport failures:
+Windows streaming attachments were previously created with Unix pipes and `Unix.create_process_env`; the fixture relay also attempted to use Windows-incompatible selector polling on process pipes. Both paths could close the coordinator stream and produce `Host_lost("host disconnected")`.
 
-1. `Resource_client.connect` always used `Unix.pipe` plus `Unix.create_process_env`, even on Windows. The streaming helper therefore did not have a reliable native bidirectional pipe lifetime.
-2. The Windows fixture's Python relay used `selectors` with ordinary process pipes. Windows selectors cannot wait on those pipe handles, so the relay closed the coordinator stream and workers reported `Host_lost("host disconnected")`.
+The transport fix uses the existing native `CreateProcessW` backend with explicit bidirectional stdin/stdout/stderr handles and Job Object cleanup. Unix behavior remains unchanged.
 
-The validated production fix is narrow: Windows resource attachments now use the existing native `CreateProcessW` backend with explicit inherited stdin/stdout/stderr handles, a Job Object, and native bidirectional read/write operations. Unix attachments retain the previous supervisor and Unix-pipe implementation.
+## Windows control transport
 
-The fixture received Windows-only TCP/helper-thread/process-cleanup adaptations. Unix socket and selector behavior remains unchanged.
+The coordinator control endpoint now uses an authenticated loopback TCP listener on Windows while retaining Unix-domain sockets on Unix:
 
-## Acceptance
+- endpoint metadata is written to the requested control path
+- metadata contains loopback host, ephemeral port, and a per-process random token
+- each connection must send the token as the first newline-delimited frame
+- the existing JSONL request/response protocol follows the token frame
+- invalid tokens receive `unauthorized`
+- endpoint metadata is removed on shutdown
+- no unauthenticated TCP listener is exposed
 
-`windows-coordinator-e2e-fixed-final.log` passes against the real built:
+## Acceptance result
 
-- `onton-coordinator.exe`
-- `onton-worker.exe`
-- native Windows process supervisor
-- two concurrent workers
-- coordinator takeover
-- real disposable Git worktrees and Git publications
-- backend event capture
-- worker/process cleanup after coordinator termination
+`windows-control-e2e-final.log` passes against the real built coordinator, worker, native supervisor, disposable Git repositories/worktrees, and fixture backend.
 
-The acceptance uses only a disposable local Git remote and fixture backend. No external forge, push, merge, or non-temporary repository was touched.
+Verified:
 
-The Windows Eio Unix-domain control endpoint is not externally addressable by the Python fixture, so guidance/sleep/wake/control-socket assertions remain Unix-only. Windows cancellation cleanup is exercised by terminating the coordinator and verifying all worker resources are reaped. Studio real orchestration remains disabled until a Windows control-socket acceptance is added.
+- two concurrent workers remain connected
+- authenticated control connection
+- invalid token rejection
+- JSONL framing
+- guidance deduplication
+- cancellation request delivery
+- coordinator/process cleanup
+- previous Windows native-pipe worker acceptance remains covered by `windows-coordinator-e2e-fixed-final.log`
 
-## Focused regressions
+No external forge, push, merge, or non-temporary repository was touched.
 
-Passed:
+## Studio gate
 
-- `test_worker_recovery_git`
-- `test_persistence_properties` (36 tests)
-- `test_resource_client`
-- `dune build @check`
-- coordinator/worker link build
+Studio real execution is guarded by `ONTON_STUDIO_ENABLE_REAL=1`, remains disabled by default, and uses the main-process-only child-process boundary. Approvals and forge mutations remain disabled in the renderer.

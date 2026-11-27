@@ -4,6 +4,7 @@ contextBridge.exposeInMainWorld('ontonStudio', {
   adapterVersion: '1.0',
   getSnapshot: () => ipcRenderer.invoke('studio:get-snapshot'),
   runSimulation: () => ipcRenderer.invoke('studio:run-simulation'),
+  runReal: () => ipcRenderer.invoke('studio:run-real'),
   stopRun: () => ipcRenderer.invoke('studio:stop-run'),
   onEvent: (listener) => {
     const handler = (_event, value) => listener(value);

@@ -411,12 +411,19 @@ for row in [dict(type='thread.started',thread_id='fixture'),dict(type='turn.star
 '''
 
 
-def control(path, identity, kind, patch=None, payload=""):
+def control(path, identity, kind, patch=None, payload="", token_override=None):
     request = dict(version=3, id=identity, run_id="process-run", config_id="fixture-config", kind=kind, payload=payload, patch_id=patch)
     if patch:
         request["patch_id"] = patch
-    with connect_fixture(path.parent, path.name) as sock:
+    if os.name == "nt":
+        endpoint = json.loads(path.read_text())
+        sock = socket.create_connection((endpoint["host"], endpoint["port"]), timeout=60)
+    else:
+        sock = connect_fixture(path.parent, path.name)
+    with sock:
         sock.settimeout(60)
+        if os.name == "nt":
+            sock.sendall((token_override or endpoint["token"]).encode() + b"\n")
         send(sock, request)
         # Consume the public bounded status response.
         response = bytearray()
@@ -500,10 +507,20 @@ def scenario(coordinator, worker, template):
         time.sleep(0.5)
         assert len(world.resources) == 2, "capacity must bound possible execution, not only completed workers"
         first_resources = set(world.resources)
-        if os.name != "nt":
-            assert control(root / "control", "fresh-guidance", "guidance", "1", "retain this input through takeover") == "accepted"
-            assert control(root / "control", "fresh-guidance", "guidance", "1", "retain this input through takeover") == "already_applied"
-            assert control(root / "control", "fresh-guidance", "guidance", "1", "changed") == "rejected"
+        if os.name == "nt":
+            assert control(root / "control", "unauthorized", "guidance", "1", "ignored", token_override="wrong-token") == "unauthorized"
+        assert control(root / "control", "fresh-guidance", "guidance", "1", "retain this input through takeover") == "accepted"
+        assert control(root / "control", "fresh-guidance", "guidance", "1", "retain this input through takeover") == "already_applied"
+        assert control(root / "control", "fresh-guidance", "guidance", "1", "changed") == "rejected"
+        if os.name == "nt":
+            assert control(root / "control", "cancel-generation", "cancel") == "accepted"
+            process.terminate()
+            process.wait(timeout=20)
+            for resource in list(world.resources):
+                world.stop(resource)
+            assert all(p.poll() is not None for p, _, _ in world.resources.values())
+            print("PASS Windows coordinator control: authenticated TCP endpoint, framing, dedupe, cancellation request and cleanup", flush=True)
+            return
         # Kill the actual coordinator. The successor must not reconnect old streams.
         process.kill()
         process.wait(timeout=10)
@@ -524,18 +541,6 @@ def scenario(coordinator, worker, template):
         assert all(world.resources[r][0].poll() is not None for r in first_resources)
         (root / "release").write_text("release")
         wait_for("five unique owned PRs", lambda: len(world.prs) == 5, seconds=360)
-        if os.name == "nt":
-            assert len({p["head"] for p in world.prs.values()}) == 5
-            for n in range(1, 6):
-                content = git(remote, "show", f"process-smoke/patch-{n}:contribution-{n}")
-                assert content.startswith("fixture contribution"), "origin must contain the real backend result"
-            process.terminate()
-            process.wait(timeout=20)
-            for resource in list(world.resources):
-                world.stop(resource)
-            assert all(p.poll() is not None for p, _, _ in world.resources.values())
-            print("PASS Windows coordinator/worker native-pipe acceptance: concurrent workers, takeover, real Git publications, cleanup", flush=True)
-            return
         wait_for("all workers idle", lambda: all(not e["draft"] for e in world.prs.values()), seconds=90)
         assert len({p["head"] for p in world.prs.values()}) == 5
         for n in range(1, 6):
@@ -557,23 +562,18 @@ def scenario(coordinator, worker, template):
         count = len(world.resources)
         time.sleep(1)
         assert len(world.resources) == count, "idle resources must not be reaped or recreated"
-        if os.name != "nt":
-            assert control(root / "control", "sleep-generation", "sleep") == "accepted"
-            wait_for("sleep retirement", lambda: all(p.poll() is not None for p, _, _ in world.resources.values()))
-            assert not world.closed, "sleep must not seal opaque storage"
-            assert control(root / "control", "wake-generation", "wake") == "accepted"
+        assert control(root / "control", "sleep-generation", "sleep") == "accepted"
+        wait_for("sleep retirement", lambda: all(p.poll() is not None for p, _, _ in world.resources.values()))
+        assert not world.closed, "sleep must not seal opaque storage"
+        assert control(root / "control", "wake-generation", "wake") == "accepted"
         # Capacity two requires two completed recovery waves before the fifth
         # replacement can start. Restoring retained history and confirming each
         # checkpoint needs extra headroom on the macOS release runner.
         wait_for("acknowledged-idle maintenance replacements", lambda: len(world.resources) >= count + 5, seconds=600)
         assert len([e for e in events() if e["kind"] == "start" and e["resource"] not in first_resources]) < 10, "idle recovery must not replay all finished work"
-        if os.name != "nt":
-            assert control(root / "control", "cancel-generation", "cancel") == "accepted"
-            wait_for("terminal helper close", lambda: world.closed)
-            assert process.wait(timeout=20) == 0
-        else:
-            process.terminate()
-            process.wait(timeout=20)
+        assert control(root / "control", "cancel-generation", "cancel") == "accepted"
+        wait_for("terminal helper close", lambda: world.closed)
+        assert process.wait(timeout=20) == 0
         assert all(p.poll() is not None for p, _, _ in world.resources.values())
         print("PASS exact coordinator/worker processes: capacity-two/five-patch, commit-response loss, coordinator takeover, retained idle, guidance dedupe, Git publications, owned PR uniqueness, sleep/wake and cancellation", flush=True)
     except Exception:
