@@ -2,18 +2,40 @@
 
 Date: local validation on `studio-development`
 
-## Attempt
+## Root cause
 
-The existing `test/distributed_coordinator_fixture.py` was exercised against the real built `onton-coordinator.exe`, `onton-worker.exe`, and the real Windows process supervisor. The fixture was first run unchanged and failed before coordinator startup because it hard-codes Unix `/tmp` paths and Unix-domain socket server classes.
+There were two independent Windows-only transport failures:
 
-A disposable, uncommitted portability experiment replaced those assumptions with temporary Windows paths, TCP localhost transport, `.cmd` Python helpers, Windows process termination, and a threaded stdio relay. It reached the real coordinator and launched worker resources, but the workers terminated with `Onton.Worker.Host_lost("host disconnected")`; no backend start events or Git publications were accepted. The experiment was discarded and did not alter production code or the committed Unix fixture.
+1. `Resource_client.connect` always used `Unix.pipe` plus `Unix.create_process_env`, even on Windows. The streaming helper therefore did not have a reliable native bidirectional pipe lifetime.
+2. The Windows fixture's Python relay used `selectors` with ordinary process pipes. Windows selectors cannot wait on those pipe handles, so the relay closed the coordinator stream and workers reported `Host_lost("host disconnected")`.
 
-The last failure is recorded in `windows-coordinator-e2e-attempt-9.log`. The coordinator was run with `ONTON_SETSID_EXEC` pointing at the built Windows supervisor and with a disposable local Git remote. No external forge, push, merge, or repository outside the temporary directory was touched.
+The validated production fix is narrow: Windows resource attachments now use the existing native `CreateProcessW` backend with explicit inherited stdin/stdout/stderr handles, a Job Object, and native bidirectional read/write operations. Unix attachments retain the previous supervisor and Unix-pipe implementation.
 
-## Blocker
+The fixture received Windows-only TCP/helper-thread/process-cleanup adaptations. Unix socket and selector behavior remains unchanged.
 
-The fixture transport is not yet a validated Windows equivalent. The coordinator's resource-helper stream loses the worker protocol connection under the Windows helper relay, producing `worker send uncertain (closed)` and worker `Host_lost`. Until that transport is isolated and fixed, real coordinator-to-worker-to-Codex acceptance is **not passed**.
+## Acceptance
 
-## Safe conclusion
+`windows-coordinator-e2e-fixed-final.log` passes against the real built:
 
-Studio real execution remains disabled. The existing local adapter, project discovery, gameplan parsing, persisted local lifecycle, and simulated cancellation remain the only enabled execution path.
+- `onton-coordinator.exe`
+- `onton-worker.exe`
+- native Windows process supervisor
+- two concurrent workers
+- coordinator takeover
+- real disposable Git worktrees and Git publications
+- backend event capture
+- worker/process cleanup after coordinator termination
+
+The acceptance uses only a disposable local Git remote and fixture backend. No external forge, push, merge, or non-temporary repository was touched.
+
+The Windows Eio Unix-domain control endpoint is not externally addressable by the Python fixture, so guidance/sleep/wake/control-socket assertions remain Unix-only. Windows cancellation cleanup is exercised by terminating the coordinator and verifying all worker resources are reaped. Studio real orchestration remains disabled until a Windows control-socket acceptance is added.
+
+## Focused regressions
+
+Passed:
+
+- `test_worker_recovery_git`
+- `test_persistence_properties` (36 tests)
+- `test_resource_client`
+- `dune build @check`
+- coordinator/worker link build

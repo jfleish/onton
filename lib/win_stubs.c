@@ -217,7 +217,8 @@ static value caml_onton_handle_value(HANDLE handle) {
   return caml_copy_int64((int64_t)(intptr_t)handle);
 }
 
-CAMLprim value caml_onton_spawn_windows(value v_cwd, value v_env, value v_cmdline) {
+static value onton_spawn_windows_impl(value v_cwd, value v_env, value v_cmdline,
+                                      int keep_stdin) {
   CAMLparam3(v_cwd, v_env, v_cmdline);
   CAMLlocal1(result);
   SECURITY_ATTRIBUTES inherited = { sizeof(SECURITY_ATTRIBUTES), NULL, TRUE };
@@ -260,8 +261,10 @@ CAMLprim value caml_onton_spawn_windows(value v_cwd, value v_env, value v_cmdlin
     error = GetLastError();
     goto cleanup;
   }
-  CloseHandle(stdin_write);
-  stdin_write = INVALID_HANDLE_VALUE;
+  if (!keep_stdin) {
+    CloseHandle(stdin_write);
+    stdin_write = INVALID_HANDLE_VALUE;
+  }
   child_handles[0] = stdin_read;
   child_handles[1] = stdout_write;
   child_handles[2] = stderr_write;
@@ -311,11 +314,17 @@ CAMLprim value caml_onton_spawn_windows(value v_cwd, value v_env, value v_cmdlin
       job = NULL;
     }
   }
-  result = caml_alloc_tuple(4);
+  result = caml_alloc_tuple(keep_stdin ? 5 : 4);
   Store_field(result, 0, caml_onton_handle_value(pi.hProcess));
   Store_field(result, 1, caml_onton_handle_value(job));
-  Store_field(result, 2, caml_onton_handle_value(stdout_read));
-  Store_field(result, 3, caml_onton_handle_value(stderr_read));
+  if (keep_stdin) {
+    Store_field(result, 2, caml_onton_handle_value(stdin_write));
+    Store_field(result, 3, caml_onton_handle_value(stdout_read));
+    Store_field(result, 4, caml_onton_handle_value(stderr_read));
+  } else {
+    Store_field(result, 2, caml_onton_handle_value(stdout_read));
+    Store_field(result, 3, caml_onton_handle_value(stderr_read));
+  }
   caml_stat_free(startup.lpAttributeList);
   caml_stat_free(cmdline);
   caml_stat_free(cwd);
@@ -343,6 +352,14 @@ cleanup:
   uerror("CreateProcessW", v_cmdline);
 }
 
+CAMLprim value caml_onton_spawn_windows(value v_cwd, value v_env, value v_cmdline) {
+  return onton_spawn_windows_impl(v_cwd, v_env, v_cmdline, 0);
+}
+
+CAMLprim value caml_onton_spawn_windows_io(value v_cwd, value v_env, value v_cmdline) {
+  return onton_spawn_windows_impl(v_cwd, v_env, v_cmdline, 1);
+}
+
 CAMLprim value caml_onton_read_windows_pipe(value v_handle, value v_bytes,
                                              value v_offset, value v_length) {
   CAMLparam4(v_handle, v_bytes, v_offset, v_length);
@@ -357,6 +374,61 @@ CAMLprim value caml_onton_read_windows_pipe(value v_handle, value v_bytes,
   if (!ok && (error == ERROR_BROKEN_PIPE || error == ERROR_HANDLE_EOF)) CAMLreturn(Val_int(0));
   if (!ok) { caml_win32_maperr(error); uerror("ReadFile", Nothing); }
   CAMLreturn(Val_int((int)got));
+}
+
+CAMLprim value caml_onton_read_windows_pipe_timeout(value v_handle, value v_bytes,
+                                                     value v_offset, value v_length,
+                                                     value v_timeout_ms) {
+  CAMLparam5(v_handle, v_bytes, v_offset, v_length, v_timeout_ms);
+  HANDLE handle = (HANDLE)(intptr_t)Int64_val(v_handle);
+  DWORD timeout = (DWORD)Long_val(v_timeout_ms);
+  DWORD available = 0;
+  DWORD got = 0;
+  BOOL ok = FALSE;
+  DWORD error = ERROR_SUCCESS;
+  caml_enter_blocking_section();
+  for (DWORD elapsed = 0; elapsed <= timeout; ++elapsed) {
+    if (PeekNamedPipe(handle, NULL, 0, NULL, &available, NULL)) {
+      if (available > 0) {
+        ok = ReadFile(handle, Bytes_val(v_bytes) + Long_val(v_offset),
+                      (DWORD)Long_val(v_length), &got, NULL);
+        error = ok ? ERROR_SUCCESS : GetLastError();
+        break;
+      }
+    } else {
+      error = GetLastError();
+      break;
+    }
+    if (elapsed < timeout) Sleep(1);
+  }
+  caml_leave_blocking_section();
+  if (!ok && error != ERROR_SUCCESS && error != ERROR_BROKEN_PIPE && error != ERROR_HANDLE_EOF) {
+    caml_win32_maperr(error); uerror("ReadFile", Nothing);
+  }
+  CAMLreturn(Val_int((int)got));
+}
+
+CAMLprim value caml_onton_pipe_available(value v_handle) {
+  CAMLparam1(v_handle);
+  HANDLE handle = (HANDLE)(intptr_t)Int64_val(v_handle);
+  DWORD available = 0;
+  if (!PeekNamedPipe(handle, NULL, 0, NULL, &available, NULL)) CAMLreturn(Val_int(-1));
+  CAMLreturn(Val_int((int)available));
+}
+
+CAMLprim value caml_onton_write_windows_pipe(value v_handle, value v_data,
+                                             value v_offset, value v_length) {
+  CAMLparam4(v_handle, v_data, v_offset, v_length);
+  HANDLE handle = (HANDLE)(intptr_t)Int64_val(v_handle);
+  DWORD written = 0;
+  BOOL ok;
+  caml_enter_blocking_section();
+  ok = WriteFile(handle, String_val(v_data) + Long_val(v_offset),
+                 (DWORD)Long_val(v_length), &written, NULL);
+  DWORD error = ok ? ERROR_SUCCESS : GetLastError();
+  caml_leave_blocking_section();
+  if (!ok) { caml_win32_maperr(error); uerror("WriteFile", Nothing); }
+  CAMLreturn(Val_int((int)written));
 }
 
 CAMLprim value caml_onton_wait_windows_process(value v_handle) {
@@ -422,9 +494,28 @@ CAMLprim value caml_onton_spawn_windows(value v_cwd, value v_env, value v_cmdlin
   (void)v_cwd; (void)v_env; (void)v_cmdline;
   caml_failwith("Windows process backend unavailable on Unix");
 }
+CAMLprim value caml_onton_spawn_windows_io(value v_cwd, value v_env, value v_cmdline) {
+  CAMLparam3(v_cwd, v_env, v_cmdline);
+  (void)v_cwd; (void)v_env; (void)v_cmdline;
+  caml_failwith("Windows process backend unavailable on Unix");
+}
 CAMLprim value caml_onton_read_windows_pipe(value v_handle, value v_bytes, value v_offset, value v_length) {
   CAMLparam5(v_handle, v_bytes, v_offset, v_length);
   (void)v_handle; (void)v_bytes; (void)v_offset; (void)v_length;
+  caml_failwith("Windows process backend unavailable on Unix");
+}
+CAMLprim value caml_onton_read_windows_pipe_timeout(value v_handle, value v_bytes, value v_offset, value v_length, value v_timeout_ms) {
+  CAMLparam5(v_handle, v_bytes, v_offset, v_length, v_timeout_ms);
+  (void)v_handle; (void)v_bytes; (void)v_offset; (void)v_length; (void)v_timeout_ms;
+  caml_failwith("Windows process backend unavailable on Unix");
+}
+CAMLprim value caml_onton_pipe_available(value v_handle) {
+  CAMLparam1(v_handle); (void)v_handle;
+  caml_failwith("Windows process backend unavailable on Unix");
+}
+CAMLprim value caml_onton_write_windows_pipe(value v_handle, value v_data, value v_offset, value v_length) {
+  CAMLparam4(v_handle, v_data, v_offset, v_length);
+  (void)v_handle; (void)v_data; (void)v_offset; (void)v_length;
   caml_failwith("Windows process backend unavailable on Unix");
 }
 CAMLprim value caml_onton_wait_windows_process(value v_handle) {

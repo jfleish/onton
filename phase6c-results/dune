@@ -17,3 +17,8 @@
  (name native_windows_only)
  (modules native_windows_only)
  (libraries onton eio_main))
+
+(executable
+ (name windows_pipe_io_probe)
+ (modules windows_pipe_io_probe)
+ (libraries onton eio_main))

@@ -30,6 +30,7 @@ val request :
 (* Raw single-use attachment. [connect] is never retried. [disconnect] is the
     sole owner of the returned descriptors; callers must not close them directly.
     An EOF is not retirement. *)
+type stream_endpoint = Unix_fd of Unix.file_descr | Windows_handle of int64
 type attachment
 
 val connect :
@@ -42,8 +43,8 @@ val connect :
   resource_id:string ->
   (attachment, string) result
 
-val input : attachment -> Unix.file_descr
-val output : attachment -> Unix.file_descr
+val input : attachment -> stream_endpoint
+val output : attachment -> stream_endpoint
 
 val disconnect : ?timeout:float -> attachment -> (unit, string) result
 (** Close the stream, ask the supervisor to terminate its process tree, and

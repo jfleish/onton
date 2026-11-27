@@ -147,6 +147,8 @@ let () =
             (r.Resource_protocol.status = Resource_protocol.Pending)
             "EOF then pending response"
       | Error _ -> failwith "helper failed");
+  if Onton.Host.is_windows then ()
+  else
   let stream_script = Filename.temp_file "onton-resource-stream" ".sh" in
   Fun.protect
     ~finally:(fun () -> Sys.remove stream_script)
@@ -173,12 +175,19 @@ let () =
       | Error e -> failwith e
       | Ok stream -> (
           check (Result.is_error (connect ())) "second attachment rejected";
-          ignore
-            (Unix.write_substring
-               (Onton.Resource_client.input stream)
-               "raw\000bytes" 0 9);
+          let input =
+            match Onton.Resource_client.input stream with
+            | Onton.Resource_client.Unix_fd fd -> fd
+            | Onton.Resource_client.Windows_handle _ -> failwith "Unix stream fixture on Windows"
+          in
+          let output =
+            match Onton.Resource_client.output stream with
+            | Onton.Resource_client.Unix_fd fd -> fd
+            | Onton.Resource_client.Windows_handle _ -> failwith "Unix stream fixture on Windows"
+          in
+          ignore (Unix.write_substring input "raw\000bytes" 0 9);
           let buf = Bytes.create 9 in
-          let n = Unix.read (Onton.Resource_client.output stream) buf 0 9 in
+          let n = Unix.read output buf 0 9 in
           check
             (n = 9 && Bytes.to_string buf = "raw\000bytes")
             "raw stream bytes";

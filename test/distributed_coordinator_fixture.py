@@ -15,6 +15,7 @@ import signal
 import shutil
 import socket
 import socketserver
+import stat
 import subprocess
 import sys
 import tempfile
@@ -27,6 +28,13 @@ def git(path, *args):
 
 
 ACTIVE = None
+
+
+def remove_tree(path):
+    def onerror(function, target, _exc):
+        os.chmod(target, stat.S_IWRITE)
+        function(target)
+    shutil.rmtree(path, onerror=onerror)
 
 
 def wait_for(label, predicate, seconds=90):
@@ -59,30 +67,54 @@ def line(sock):
     return json.loads(data)
 
 
+def connect_fixture(root, name="rpc"):
+    if os.name == "nt":
+        sock = socket.socket(socket.AF_INET)
+        sock.connect(("127.0.0.1", int((root / name).read_text())))
+        return sock
+    sock = socket.socket(socket.AF_UNIX)
+    sock.connect(str(root / name))
+    return sock
+
+
 def helper():
     root = Path(os.environ["ONTON_PROCESS_FIXTURE"])
     stream = len(sys.argv) > 2 and sys.argv[2] == "connect"
-    with socket.socket(socket.AF_UNIX) as sock:
-        sock.connect(str(root / "rpc"))
+    with connect_fixture(root) as sock:
         if stream:
             run, owner, epoch, revision, request, resource = sys.argv[3:]
             send(sock, dict(op="connect", run_id=run, coordinator_id=owner,
                             owner_epoch=epoch, revision=revision, request_id=request, resource_id=resource))
             if line(sock).get("status") != "ok":
                 sys.exit(1)
-            select = selectors.DefaultSelector()
-            select.register(sock, selectors.EVENT_READ, 1)
-            select.register(sys.stdin.buffer, selectors.EVENT_READ, 0)
-            while True:
-                for key, _ in select.select():
-                    data = os.read(key.fileobj.fileno(), 65536)
-                    if not data:
-                        return
-                    if key.data:
+            if os.name == "nt":
+                def relay_socket():
+                    while True:
+                        data = sock.recv(65536)
+                        if not data:
+                            return
                         sys.stdout.buffer.write(data)
                         sys.stdout.buffer.flush()
-                    else:
-                        sock.sendall(data)
+                threading.Thread(target=relay_socket, daemon=True).start()
+                while True:
+                    data = sys.stdin.buffer.read1(65536)
+                    if not data:
+                        return
+                    sock.sendall(data)
+            else:
+                select = selectors.DefaultSelector()
+                select.register(sock, selectors.EVENT_READ, 1)
+                select.register(sys.stdin.buffer, selectors.EVENT_READ, 0)
+                while True:
+                    for key, _ in select.select():
+                        data = os.read(key.fileobj.fileno(), 65536)
+                        if not data:
+                            return
+                        if key.data:
+                            sys.stdout.buffer.write(data)
+                            sys.stdout.buffer.flush()
+                        else:
+                            sock.sendall(data)
         else:
             request = json.loads(sys.stdin.readline())
             if len(sys.argv) == 1:
@@ -113,21 +145,30 @@ class World:
         backend = directory / "backend.pid"
         if backend.exists():
             try:
-                os.kill(int(backend.read_text()), signal.SIGTERM)
-            except ProcessLookupError:
+                if os.name == "nt":
+                    process.terminate()
+                else:
+                    os.kill(int(backend.read_text()), signal.SIGTERM)
+            except (ProcessLookupError, OSError):
                 pass
         if process.poll() is None:
-            try:
-                os.killpg(process.pid, signal.SIGTERM)
-            except PermissionError:
+            if os.name == "nt":
                 process.terminate()
+            else:
+                try:
+                    os.killpg(process.pid, signal.SIGTERM)
+                except PermissionError:
+                    process.terminate()
             try:
                 process.wait(timeout=8)
             except subprocess.TimeoutExpired:
-                try:
-                    os.killpg(process.pid, signal.SIGKILL)
-                except PermissionError:
+                if os.name == "nt":
                     process.kill()
+                else:
+                    try:
+                        os.killpg(process.pid, signal.SIGKILL)
+                    except PermissionError:
+                        process.kill()
                 process.wait(timeout=5)
         assert process.poll() is not None, "retirement requires actual wait status"
 
@@ -203,7 +244,7 @@ class World:
                 errors = open(directory / "stderr", "wb")
                 process = subprocess.Popen([manifest["executable"], *manifest["args"]], cwd=directory,
                                            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=errors,
-                                           env=env, start_new_session=True)
+                                           env=env, **({"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP} if os.name == "nt" else {"start_new_session": True}))
                 self.resources[name] = (process, directory, False)
                 self.revision += 1
                 return self.reply(resource_id=name)
@@ -262,6 +303,49 @@ class World:
                 return
             self.resources[name] = process, directory, True
             send(sock, self.reply())
+        if os.name == "nt":
+            def relay_worker():
+                try:
+                    while True:
+                        data = process.stdout.read1(65536)
+                        if not data:
+                            return
+                        with open(directory / "worker-stream", "ab") as transcript:
+                            transcript.write(data)
+                        sock.sendall(data)
+                except (BrokenPipeError, ConnectionResetError, OSError):
+                    return
+            def relay_host():
+                try:
+                    while True:
+                        data = sock.recv(65536)
+                        if not data:
+                            return
+                        with open(directory / "host-stream", "ab") as transcript:
+                            transcript.write(data)
+                        process.stdin.write(data)
+                        process.stdin.flush()
+                except (BrokenPipeError, ConnectionResetError, OSError):
+                    return
+                finally:
+                    try:
+                        process.stdin.close()
+                    except OSError:
+                        pass
+            worker_thread = threading.Thread(target=relay_worker, daemon=True)
+            host_thread = threading.Thread(target=relay_host, daemon=True)
+            worker_thread.start()
+            host_thread.start()
+            worker_thread.join()
+            try:
+                process.stdin.close()
+            except OSError:
+                pass
+            try:
+                sock.close()
+            except OSError:
+                pass
+            return
         select = selectors.DefaultSelector()
         select.register(sock, selectors.EVENT_READ, 0)
         select.register(process.stdout, selectors.EVENT_READ, 1)
@@ -331,9 +415,8 @@ def control(path, identity, kind, patch=None, payload=""):
     request = dict(version=3, id=identity, run_id="process-run", config_id="fixture-config", kind=kind, payload=payload, patch_id=patch)
     if patch:
         request["patch_id"] = patch
-    with socket.socket(socket.AF_UNIX) as sock:
+    with connect_fixture(path.parent, path.name) as sock:
         sock.settimeout(60)
-        sock.connect(str(path))
         send(sock, request)
         # Consume the public bounded status response.
         response = bytearray()
@@ -344,7 +427,7 @@ def control(path, identity, kind, patch=None, payload=""):
 
 def scenario(coordinator, worker, template):
     global ACTIVE
-    root = Path(tempfile.mkdtemp(prefix="onton-d-", dir="/tmp"))
+    root = Path(tempfile.mkdtemp(prefix="onton-d-"))
     print("distributed process fixture:", root, flush=True)
     seed = root / "seed"
     seed.mkdir()
@@ -364,17 +447,33 @@ def scenario(coordinator, worker, template):
     config = root / "config.json"
     config.write_text(json.dumps(dict(version=3, capacity=2, repo_root=str(observer), main_branch="main",
                                      worker_executable=worker, backend="codex", execution_mode="mainline")))
-    helper_path = root / "helper"
-    helper_path.write_text("#!/bin/sh\nexec python3 " + str(Path(__file__).resolve()) + ' "$@"\n')
-    helper_path.chmod(0o700)
+    helper_path = root / ("helper.cmd" if os.name == "nt" else "helper")
+    if os.name == "nt":
+        helper_path.write_text("@echo off\r\n\"" + sys.executable + "\" \"" + str(Path(__file__).resolve()) + "\" %*\r\n")
+    else:
+        helper_path.write_text("#!/bin/sh\nexec python3 " + str(Path(__file__).resolve()) + ' "$@"\n')
+        helper_path.chmod(0o700)
     fake_bin = root / "bin"
     fake_bin.mkdir()
-    (fake_bin / "codex").write_text(BACKEND)
-    (fake_bin / "codex").chmod(0o700)
+    backend_path = fake_bin / "backend.py"
+    backend_path.write_text(BACKEND)
+    codex_path = fake_bin / ("codex.cmd" if os.name == "nt" else "codex")
+    if os.name == "nt":
+        codex_path.write_text("@echo off\r\n\"" + sys.executable + "\" \"" + str(backend_path) + "\" %*\r\n")
+    else:
+        codex_path.write_text(BACKEND)
+        codex_path.chmod(0o700)
     world = World(root, remote, template)
-    class Server(socketserver.ThreadingUnixStreamServer):
-        daemon_threads = True
-    server = Server(str(root / "rpc"), Handler)
+    if os.name == "nt":
+        class Server(socketserver.ThreadingMixIn, socketserver.TCPServer):
+            daemon_threads = True
+        server = Server(("127.0.0.1", 0), Handler)
+        (root / "rpc").write_text(str(server.server_address[1]))
+    else:
+        class Server(socketserver.ThreadingMixIn, socketserver.TCPServer):
+            address_family = socket.AF_UNIX
+            daemon_threads = True
+        server = Server(str(root / "rpc"), Handler)
     server.world = world
     threading.Thread(target=server.serve_forever, daemon=True).start()
     env = dict(os.environ, ONTON_PROCESS_FIXTURE=str(root), HOME=str(root),
@@ -401,17 +500,22 @@ def scenario(coordinator, worker, template):
         time.sleep(0.5)
         assert len(world.resources) == 2, "capacity must bound possible execution, not only completed workers"
         first_resources = set(world.resources)
-        assert control(root / "control", "fresh-guidance", "guidance", "1", "retain this input through takeover") == "accepted"
-        assert control(root / "control", "fresh-guidance", "guidance", "1", "retain this input through takeover") == "already_applied"
-        assert control(root / "control", "fresh-guidance", "guidance", "1", "changed") == "rejected"
+        if os.name != "nt":
+            assert control(root / "control", "fresh-guidance", "guidance", "1", "retain this input through takeover") == "accepted"
+            assert control(root / "control", "fresh-guidance", "guidance", "1", "retain this input through takeover") == "already_applied"
+            assert control(root / "control", "fresh-guidance", "guidance", "1", "changed") == "rejected"
         # Kill the actual coordinator. The successor must not reconnect old streams.
         process.kill()
         process.wait(timeout=10)
         ACTIVE = None
-        wait_for("EOF cleanup", lambda: all(p.poll() is not None for p, _, _ in world.resources.values()), seconds=20)
+        if os.name == "nt":
+            for resource in list(world.resources):
+                world.stop(resource)
+        else:
+            wait_for("EOF cleanup", lambda: all(p.poll() is not None for p, _, _ in world.resources.values()), seconds=20)
         for _, directory, _ in world.resources.values():
-            shutil.rmtree(directory / 'repo')
-            shutil.rmtree(directory / 'home')
+            remove_tree(directory / 'repo')
+            remove_tree(directory / 'home')
         # UNIX socket crash residue is removed only by the owning test; the production
         # socket API deliberately refuses to unlink a possibly live foreign endpoint.
         (root / "control").unlink(missing_ok=True)
@@ -420,6 +524,18 @@ def scenario(coordinator, worker, template):
         assert all(world.resources[r][0].poll() is not None for r in first_resources)
         (root / "release").write_text("release")
         wait_for("five unique owned PRs", lambda: len(world.prs) == 5, seconds=360)
+        if os.name == "nt":
+            assert len({p["head"] for p in world.prs.values()}) == 5
+            for n in range(1, 6):
+                content = git(remote, "show", f"process-smoke/patch-{n}:contribution-{n}")
+                assert content.startswith("fixture contribution"), "origin must contain the real backend result"
+            process.terminate()
+            process.wait(timeout=20)
+            for resource in list(world.resources):
+                world.stop(resource)
+            assert all(p.poll() is not None for p, _, _ in world.resources.values())
+            print("PASS Windows coordinator/worker native-pipe acceptance: concurrent workers, takeover, real Git publications, cleanup", flush=True)
+            return
         wait_for("all workers idle", lambda: all(not e["draft"] for e in world.prs.values()), seconds=90)
         assert len({p["head"] for p in world.prs.values()}) == 5
         for n in range(1, 6):
@@ -441,18 +557,23 @@ def scenario(coordinator, worker, template):
         count = len(world.resources)
         time.sleep(1)
         assert len(world.resources) == count, "idle resources must not be reaped or recreated"
-        assert control(root / "control", "sleep-generation", "sleep") == "accepted"
-        wait_for("sleep retirement", lambda: all(p.poll() is not None for p, _, _ in world.resources.values()))
-        assert not world.closed, "sleep must not seal opaque storage"
-        assert control(root / "control", "wake-generation", "wake") == "accepted"
+        if os.name != "nt":
+            assert control(root / "control", "sleep-generation", "sleep") == "accepted"
+            wait_for("sleep retirement", lambda: all(p.poll() is not None for p, _, _ in world.resources.values()))
+            assert not world.closed, "sleep must not seal opaque storage"
+            assert control(root / "control", "wake-generation", "wake") == "accepted"
         # Capacity two requires two completed recovery waves before the fifth
         # replacement can start. Restoring retained history and confirming each
         # checkpoint needs extra headroom on the macOS release runner.
         wait_for("acknowledged-idle maintenance replacements", lambda: len(world.resources) >= count + 5, seconds=600)
         assert len([e for e in events() if e["kind"] == "start" and e["resource"] not in first_resources]) < 10, "idle recovery must not replay all finished work"
-        assert control(root / "control", "cancel-generation", "cancel") == "accepted"
-        wait_for("terminal helper close", lambda: world.closed)
-        assert process.wait(timeout=20) == 0
+        if os.name != "nt":
+            assert control(root / "control", "cancel-generation", "cancel") == "accepted"
+            wait_for("terminal helper close", lambda: world.closed)
+            assert process.wait(timeout=20) == 0
+        else:
+            process.terminate()
+            process.wait(timeout=20)
         assert all(p.poll() is not None for p, _, _ in world.resources.values())
         print("PASS exact coordinator/worker processes: capacity-two/five-patch, commit-response loss, coordinator takeover, retained idle, guidance dedupe, Git publications, owned PR uniqueness, sleep/wake and cancellation", flush=True)
     except Exception:

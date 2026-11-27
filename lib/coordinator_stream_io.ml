@@ -2,17 +2,22 @@
    @archlint.exempt-reason effect-boundary *)
 
 type t = {
-  input : Unix.file_descr;
-  output : Unix.file_descr;
+  input : Resource_client.stream_endpoint;
+  output : Resource_client.stream_endpoint;
   mutable pending : string;
   monotonic_now : unit -> float;
 }
 
+let[@warning "-4"] configure_endpoints = function
+  | Resource_client.Unix_fd input, Resource_client.Unix_fd output ->
+      Host.set_nonblock input;
+      Host.set_nonblock output
+  | _ -> ()
+
 let create ~mono_clock attachment =
   let input = Resource_client.input attachment
   and output = Resource_client.output attachment in
-  Host.set_nonblock input;
-  Host.set_nonblock output;
+  configure_endpoints (input, output);
   {
     input;
     output;
@@ -27,8 +32,12 @@ let ready t =
   try
     String.contains t.pending '\n'
     ||
-    let readable, _, _ = Unix.select [ t.output ] [] [] 0. in
-    readable <> []
+    match t.output with
+    | Resource_client.Windows_handle handle ->
+        Windows_process.available handle > 0
+    | Resource_client.Unix_fd output ->
+        let readable, _, _ = Unix.select [ output ] [] [] 0. in
+        readable <> []
   with _ -> false
 
 let max_frame = 1024 * 1024
@@ -48,41 +57,44 @@ let read t ~timeout =
   else
     let deadline = t.monotonic_now () +. timeout in
     let bytes = Bytes.create 4096 in
-    let rec loop () =
+    let rec frame () =
       match String.index_opt t.pending '\n' with
       | Some index ->
           let length = index + 1 in
           if length > max_frame then Error "oversized worker frame"
           else
-            let frame = String.sub t.pending 0 length in
-            t.pending <-
-              String.sub t.pending length (String.length t.pending - length);
-            Ok frame
-      | None when String.length t.pending >= max_frame ->
-          Error "oversized worker frame"
-      | None -> (
-          if not (waiting t deadline [ t.output ] []) then
-            Error "worker frame timed out"
+            let result = String.sub t.pending 0 length in
+            t.pending <- String.sub t.pending length (String.length t.pending - length);
+            Ok result
+      | None when String.length t.pending >= max_frame -> Error "oversized worker frame"
+      | None ->
+          let remaining = deadline -. t.monotonic_now () in
+          if remaining <= 0. then Error "worker frame timed out"
           else
-            match Unix.read t.output bytes 0 (Bytes.length bytes) with
-            | 0 -> Error "worker stream lost (not retirement)"
-            | count ->
-                t.pending <- t.pending ^ Bytes.sub_string bytes 0 count;
-                loop ()
-            | exception
-                Unix.Unix_error
-                  ((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _) ->
-                loop ())
+            let count =
+              match t.output with
+              | Resource_client.Windows_handle handle ->
+                  Windows_process.read_timeout handle bytes
+                    (Int.max 1 (Int.of_float (remaining *. 1000.)))
+              | Resource_client.Unix_fd output ->
+                  if not (waiting t deadline [ output ] []) then 0
+                  else
+                    (try Unix.read output bytes 0 (Bytes.length bytes)
+                     with Unix.Unix_error ((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _) -> -1)
+            in
+            if count = 0 then Error "worker stream lost (not retirement)"
+            else if count < 0 then frame ()
+            else (t.pending <- t.pending ^ Bytes.sub_string bytes 0 count; frame ())
     in
-    try loop () with _ -> Error "worker frame read failed"
+    try frame () with _ -> Error "worker frame read failed"
 
 let send t ~timeout frames =
   if not (valid_timeout timeout) then Error "invalid stream timeout"
   else if
-    Stdlib.List.exists
+    List.exists
       (fun frame ->
         String.length frame = 0
-        || (not (Char.equal frame.[String.length frame - 1] '\n'))
+        || not (Char.equal frame.[String.length frame - 1] '\n')
         ||
         match String.index_opt frame '\n' with
         | Some index -> index <> String.length frame - 1
@@ -96,36 +108,21 @@ let send t ~timeout frames =
       else
         let remaining = deadline -. t.monotonic_now () in
         if remaining <= 0. then Error "worker send uncertain (timeout)"
-        else if Host.is_windows then
-          let timeout_ms = Int.max 1 (Int.of_float (remaining *. 1000.)) in
-          match
-            Host.write_pipe_timeout t.input frame offset
-              (String.length frame - offset)
-              timeout_ms
-          with
-          | -1 -> Error "worker send uncertain (timeout)"
-          | count when count > 0 -> write frame (offset + count)
-          | _ -> Error "worker send uncertain (closed)"
-        else if not (waiting t deadline [] [ t.input ]) then
-          Error "worker send uncertain (timeout)"
         else
-          match
-            Unix.single_write_substring t.input frame offset
-              (String.length frame - offset)
-          with
-          | 0 -> Error "worker send uncertain (closed)"
-          | count -> write frame (offset + count)
-          | exception
-              Unix.Unix_error
-                ((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _) ->
-              write frame offset
+          match t.input with
+          | Resource_client.Windows_handle handle ->
+              (try
+                 let count = Windows_process.write handle (String.sub frame offset (String.length frame - offset)) in
+                 if count <= 0 then Error "worker send uncertain (closed)"
+                 else write frame (offset + count)
+               with _ -> Error "worker send uncertain (closed)")
+          | Resource_client.Unix_fd input ->
+              if not (waiting t deadline [] [ input ]) then Error "worker send uncertain (timeout)"
+              else
+                (try
+                   match Unix.single_write_substring input frame offset (String.length frame - offset) with
+                   | 0 -> Error "worker send uncertain (closed)"
+                   | count -> write frame (offset + count)
+                 with Unix.Unix_error ((Unix.EAGAIN | Unix.EWOULDBLOCK | Unix.EINTR), _, _) -> write frame offset)
     in
-    let rec loop = function
-      | [] -> Ok ()
-      | frame :: rest -> (
-          match write frame 0 with Ok () -> loop rest | Error _ as e -> e)
-    in
-    try loop frames with
-    | Unix.Unix_error (err, _, _) ->
-        Error ("worker send uncertain: " ^ Unix.error_message err)
-    | _ -> Error "worker send uncertain (I/O failure)"
+    List.fold_left (fun result frame -> match result with Ok () -> write frame 0 | Error _ as error -> error) (Ok ()) frames

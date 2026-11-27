@@ -210,10 +210,15 @@ let request t req =
             | Ok r when exit <> 0 -> Error (Helper_exit (exit, r))
             | Ok r -> Ok r))
 
+type stream_endpoint = Unix_fd of Unix.file_descr | Windows_handle of int64
+
 type attachment = {
-  stdin : Unix.file_descr;
-  stdout : Unix.file_descr;
+  stdin : stream_endpoint;
+  stdout : stream_endpoint;
   pid : int;
+  process : int64 option;
+  job : int64 option;
+  stderr : int64 option;
   mutable closed : bool;
   mutable reaped : bool;
   mutable teardown_confirmed : bool;
@@ -222,12 +227,30 @@ type attachment = {
 let input a = a.stdin
 let output a = a.stdout
 
+let close_endpoint = function
+  | Unix_fd fd -> close fd
+  | Windows_handle handle -> Windows_process.close handle
+
 let disconnect ?(timeout = 5.) a =
-  if not a.closed then (
-    a.closed <- true;
-    close a.stdin;
-    close a.stdout);
-  if a.reaped then
+  if Host.is_windows then (
+    if not a.closed then (
+      a.closed <- true;
+      close_endpoint a.stdin;
+      close_endpoint a.stdout);
+    match (a.process, a.job) with
+    | Some process, Some job ->
+        if not a.reaped then (
+          Windows_process.terminate job;
+          ignore (Windows_process.wait process);
+          a.reaped <- true);
+        if not a.teardown_confirmed then (
+          Windows_process.close job;
+          Windows_process.close process;
+          Option.iter a.stderr ~f:Windows_process.close;
+          a.teardown_confirmed <- true);
+        Ok ()
+    | _ -> Error "missing Windows process handles")
+  else if a.reaped then
     if a.teardown_confirmed then Ok ()
     else Error "supervisor teardown was not confirmed"
   else if (not (Float.is_finite timeout)) || Float.(timeout <= 0.) then
@@ -296,6 +319,26 @@ let connect t ~run_id ~coordinator_id ~owner_epoch ~revision ~request_id
   then Error "invalid connect selector"
   else if List.mem t.attachments resource_id ~equal:String.equal then
     Error "attachment already consumed"
+  else if Host.is_windows then
+    (try
+       let handles =
+         Windows_process.spawn_io
+           ~env:(Unix.environment ())
+           (Host.windows_command
+              [ t.helper; "resources"; "connect"; run_id; coordinator_id;
+                Int64.to_string owner_epoch; Int64.to_string revision; request_id;
+                resource_id ])
+       in
+       t.attachments <- resource_id :: t.attachments;
+       Ok
+         { stdin = Windows_handle (Windows_process.io_stdin handles);
+           stdout = Windows_handle (Windows_process.io_stdout handles);
+           pid = 0;
+           process = Some (Windows_process.io_process handles);
+           job = Some (Windows_process.io_job handles);
+           stderr = Some (Windows_process.io_stderr handles);
+           closed = false; reaped = false; teardown_confirmed = false }
+     with exn -> Error (Exn.to_string exn))
   else
     let supervisor = Process_tree.supervisor_path () in
     if String.is_empty supervisor || not (Stdlib.Sys.file_exists supervisor)
@@ -332,9 +375,12 @@ let connect t ~run_id ~coordinator_id ~owner_epoch ~revision ~request_id
         t.attachments <- resource_id :: t.attachments;
         Ok
           {
-            stdin = in_w;
-            stdout = out_r;
+            stdin = Unix_fd in_w;
+            stdout = Unix_fd out_r;
             pid;
+            process = None;
+            job = None;
+            stderr = None;
             closed = false;
             reaped = false;
             teardown_confirmed = false;
