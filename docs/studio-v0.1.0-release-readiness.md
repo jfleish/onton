@@ -26,6 +26,7 @@ Branch: `studio-development`
 | Dependency integration regression | PASS | `test_worktree_backend_integration.exe`; fan-in content/ancestry and conflict-abort checks |
 | Fixed packaged four-task validation | PASS | Disposable clone completed all four tasks; integrated content, exact SHAs, worktree HEADs, ancestry, timestamps, and local-only forge verified |
 | Restart state recovery | PASS | All four worktrees and merged/head SHA state recovered; fixed packaged headless process exited 0 automatically |
+| Interactive dependency graph | PASS (development host) | Electron CDP verified 4 nodes, 3 directed edges, fan-in, selection/details, and graph controls; screenshot under `phase6c-results/studio-graph-acceptance/` |
 | Uninstall repository safety | PASS | disposable repository SHA-256 inventory unchanged |
 | Automated acceptance script | PASS (development host only) | `scripts/accept-studio-windows.ps1`; installer/native/dependency/validation/uninstall/repository checks passed |
 | Clean-machine VM | SKIP | no disposable Windows VM or isolated runner available; do not treat development-host PASS as VM acceptance |

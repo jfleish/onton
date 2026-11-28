@@ -88,7 +88,8 @@ Verified through the packaged renderer/CDP surface:
 - Backend/forge/concurrency configuration was visible and saved.
 - Dashboard showed live task states, completion percentage, agents, transcripts, commits, artifacts, and `Needs attention` failure state.
 - Error reporting was actionable: task 3 exposed the exact missing dependency commits and wrote a blocker report.
-- The advertised `Dependency flow` is a textual task list; no rendered graph nodes were present (`graphNodes=0` in the inspected DOM). This is usable for four tasks but weak for a nontrivial DAG.
+- The dependency graph now renders real nodes and directed edges with layered fan-in layout, selected-node details, task status badges, agent/transcript/artifact/commit evidence, pan/zoom/fit/reset controls, keyboard navigation, and responsive/reduced-motion styling.
+- Electron CDP acceptance on the disposable four-task plan found 4 nodes, 3 directed edges, simultaneous independent branches, correct task-3 selection/details, and working zoom controls. Screenshot: `phase6c-results/studio-graph-acceptance/dependency-graph.png`.
 - Structured format-version 2/3 plans remain executable/importable but are intentionally not editable in the Studio builder; this limits editing existing real-world plans.
 
 ## Five highest-impact problems
