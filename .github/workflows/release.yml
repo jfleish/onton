@@ -148,10 +148,31 @@ jobs:
           if ((opam exec -- dune exec bin/main.exe -- --version) -ne $version) { throw 'Version smoke test failed' }
           opam exec -- dune exec bin/setsid_exec/main.exe -- cmd.exe /c exit 0
           Compress-Archive -Path _dist/bin/* -DestinationPath ('onton-x86_64-pc-windows-gnu.zip')
+          $env:ONTON_RUNTIME_DLL = $gmp.FullName
+      - name: Set up Node.js for Studio packaging
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - name: Build and package Studio
+        shell: pwsh
+        run: |
+          npm ci
+          npm run studio:check
+          npm run studio:package
+          if (-not (Test-Path dist-electron\win-unpacked\resources\native\win32-x64\onton.exe)) { throw 'Packaged Onton engine missing' }
+          if (-not (Test-Path dist-electron\win-unpacked\resources\native\win32-x64\libgmp-10.dll)) { throw 'Packaged OCaml runtime missing' }
+          Get-FileHash dist-electron\Onton-Studio-*.exe -Algorithm SHA256 | ForEach-Object { "$($_.Hash)  $($_.Path)" } | Set-Content dist-electron\SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
           name: onton-x86_64-pc-windows-gnu
           path: onton-x86_64-pc-windows-gnu.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: onton-studio-windows-x64
+          path: |
+            dist-electron/Onton-Studio-*.exe
+            dist-electron/SHA256SUMS.txt
 
   release:
     name: Create Release
