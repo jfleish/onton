@@ -1894,6 +1894,14 @@ let gameplan_path_arg =
     & info [ "gameplan" ] ~docv:"GAMEPLAN"
         ~doc:"Path to a YAML or JSON gameplan file.")
 
+let validate_gameplan_arg =
+  let open Cmdliner in
+  Arg.(
+    value
+    & opt (some string) None
+    & info [ "validate-gameplan" ] ~docv:"GAMEPLAN"
+        ~doc:"Validate a gameplan with Onton's canonical parser and schema checks.")
+
 let forge_arg =
   let open Cmdliner in
   Arg.(
@@ -2138,12 +2146,19 @@ let publish_gameplan_arg =
 
 let main_cmd ~pr_ops =
   let open Cmdliner in
-  let run_cmd project gameplan_path forge github_token backend model main_branch
+  let run_cmd project gameplan_path validate_gameplan forge github_token backend model main_branch
       poll_interval repo_root max_concurrency max_ci_failures automerge_timeout
       worktree_backend worktree_executable headless headless_transcript
       upload_debug no_lock prune no_refresh auto_merge clone_scheme
       feature_branch publish_gameplan =
-    if prune then
+    match validate_gameplan with
+    | Some path ->
+        (match Gameplan_parser.parse_file path with
+        | Ok _ -> Stdlib.exit 0
+        | Error error ->
+            Printf.eprintf "Gameplan validation failed: %s\n%!" error;
+            Stdlib.exit 2)
+    | None -> if prune then
       Stdlib.exit
         ( Eio_main.run @@ fun env ->
           Prune_runner.run_prune ~net:(Eio.Stdenv.net env)
@@ -2195,8 +2210,8 @@ let main_cmd ~pr_ops =
   in
   let term =
     Term.(
-      const run_cmd $ project_arg $ gameplan_path_arg $ forge_arg
-      $ github_token_arg $ backend_arg $ model_arg $ main_branch_arg
+      const run_cmd $ project_arg $ gameplan_path_arg $ validate_gameplan_arg
+      $ forge_arg $ github_token_arg $ backend_arg $ model_arg $ main_branch_arg
       $ poll_interval_arg $ repo_arg $ max_concurrency_arg $ max_ci_failures_arg
       $ automerge_timeout_arg $ worktree_backend_arg $ worktree_executable_arg
       $ headless_arg $ headless_transcript_arg $ upload_debug_arg $ no_lock_arg

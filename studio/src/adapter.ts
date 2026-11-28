@@ -35,11 +35,19 @@ export interface StudioEvent {
 export type AdapterMode = "local" | "simulated" | "real";
 export type RunStatus = "idle" | "running" | "completed" | "failed" | "cancelled";
 
+export interface StudioGameplan { name: string; path: string; selected: boolean; }
+export interface StudioRecentProject { root: string; lastUsed: string; }
+export interface StudioConfig { backend: "codex"; forge: "local"; mainBranch: string; maxConcurrency: number; }
 export interface StudioSnapshot {
   version: typeof STUDIO_ADAPTER_VERSION;
   mode: AdapterMode;
   realEnabled: boolean;
   project: { root: string; name: string; branch: string; dirty: boolean; updatedAt: string; gameplanPath: string | null; backend: "codex" };
+  gameplan: Record<string, unknown> | null;
+  gameplans: StudioGameplan[];
+  recents: StudioRecentProject[];
+  config: StudioConfig;
+  error: string | null;
   tasks: StudioTask[];
   agents: StudioAgent[];
   events: StudioEvent[];
@@ -55,6 +63,10 @@ export interface StudioAdapter {
   chooseProject(): Promise<StudioSnapshot>;
   chooseGameplan(): Promise<StudioSnapshot>;
   chooseBackend(): Promise<StudioSnapshot>;
+  openRecent(projectRoot: string): Promise<StudioSnapshot>;
+  saveConfig(patch: Partial<StudioConfig>): Promise<StudioSnapshot>;
+  saveGameplan(document: Record<string, unknown>): Promise<StudioSnapshot>;
+  validateGameplan(file: string): Promise<StudioSnapshot>;
   runSimulation(): Promise<StudioSnapshot>;
   runReal(): Promise<StudioSnapshot>;
   stopRun(): Promise<StudioSnapshot>;
