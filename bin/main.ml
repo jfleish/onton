@@ -595,12 +595,7 @@ let resolve_config ~claim_project ~project ~gameplan_path ~forge ~github_token
           let forge = if String.equal forge "auto" then "github" else forge in
           let owner = normalize_forge_owner ~forge owner in
           let target_error =
-             if String.equal forge "local" && List.length gameplan.patches <> 1 then
-               Some
-                 "--forge local currently supports exactly one patch for the
-                  bounded local acceptance profile"
-             else
-            if Base.String.is_empty owner || Base.String.is_empty repo then
+             if Base.String.is_empty owner || Base.String.is_empty repo then
               Some
                 (Printf.sprintf
                    "Gameplan %s is missing required top-level `owner` and/or \

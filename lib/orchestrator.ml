@@ -342,7 +342,10 @@ let complete t patch_id =
           })
 
 let complete_local t patch_id =
-  update_agent (complete t patch_id) patch_id ~f:Patch_agent.clear_session_completion
+  (* Local completion is the dependency boundary for this forge-less profile;
+     it records no PR/CI/merge evidence and only unblocks local dependents. *)
+  update_agent (complete t patch_id) patch_id ~f:(fun agent ->
+      agent |> Patch_agent.mark_merged |> Patch_agent.clear_session_completion)
 
 let prepare_rebase_after_checkpoint_failure t patch_id =
   match find_agent t patch_id with

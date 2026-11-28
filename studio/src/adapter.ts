@@ -1,7 +1,7 @@
 export const STUDIO_ADAPTER_VERSION = "1.0" as const;
 
-export type TaskStatus = "done" | "running" | "queued" | "blocked";
-export type AgentStatus = "working" | "waiting" | "idle" | "blocked";
+export type TaskStatus = "done" | "running" | "queued" | "blocked" | "failed" | "cancelled";
+export type AgentStatus = "working" | "waiting" | "idle" | "blocked" | "failed" | "cancelled";
 
 export interface StudioTask {
   id: string;
@@ -58,7 +58,7 @@ export interface StudioAdapter {
   runSimulation(): Promise<StudioSnapshot>;
   runReal(): Promise<StudioSnapshot>;
   stopRun(): Promise<StudioSnapshot>;
-  onEvent(listener: (event: StudioEvent) => void): () => void;
+  onEvent(listener: (snapshot: StudioSnapshot) => void): () => void;
 }
 
 declare global {

@@ -11,7 +11,7 @@ let run = { id: null, mode: 'local', status: 'idle', startedAt: null, endedAt: n
 const now = () => new Date().toISOString();
 function root() { const r = fs.realpathSync(config.root); if (!fs.statSync(r).isDirectory()) throw Error('Project is not a directory'); config.root = r; return r; }
 function git(args) { return gitAt(root(), args); }
-function gitAt(cwd, args) { try { return execFileSync('git', ['-C', cwd, ...args], { encoding: 'utf8', timeout: 2500, windowsHide: true }).trim(); } catch (_) { return ''; } }
+function gitAt(cwd, args) { if (!cwd || !fs.existsSync(cwd)) return ''; try { return execFileSync('git', ['-C', cwd, ...args], { encoding: 'utf8', timeout: 2500, windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'] }).trim(); } catch (_) { return ''; } }
 function key() { return crypto.createHash('sha256').update(root()).digest('hex').slice(0, 24); }
 function localFile() { return path.join(app.getPath('userData'), 'projects', `${key()}.json`); }
 function persisted() { try { return JSON.parse(fs.readFileSync(localFile(), 'utf8')); } catch (_) { return {}; } }
@@ -45,6 +45,9 @@ function sessionTranscripts() {
 }
 function taskStatus(agent) {
   if (!agent || typeof agent !== 'object') return 'queued';
+  const result = JSON.stringify(agent.session_completion?.result || '').toLowerCase();
+  if (!agent.busy && /cancel/.test(result)) return 'cancelled';
+  if (!agent.busy && /error|failed|failure/.test(result)) return 'failed';
   if (agent.intervention_reason || agent.wontdo_reason || agent.needs_intervention === true) return 'blocked';
   if (agent.busy === true || agent.current_op_state?.[0] === 'Running') return 'running';
   if (agent.merged === true || agent.completed === true || agent.status === 'done' || agent.status === 'completed' || agent.branch_reconcile?.publications?.length > 0) return 'done';
@@ -53,8 +56,10 @@ function taskStatus(agent) {
 function authoritativeTasks(snap) {
   const agents = snap?.orchestrator?.agents || snap?.agents || {};
   const find = (id) => Array.isArray(agents) ? agents.find((a) => String(a.patch_id || a.id) === id || String(a.patch_id || a.id) === id.replace('task-', '')) : agents[id] || agents[id.replace('task-', '')];
-  const patches = readGameplan()?.patches;
-  return Array.isArray(patches) ? patches.map((p) => { const n = String(p.number); const a = find(`task-${n}`); const status = taskStatus(a); return { id: `task-${n}`, title: String(p.title || `Patch ${n}`), owner: `patch-${n}`, status, dependsOn: Array.isArray(p.dependsOn) ? p.dependsOn.map((x) => String(x).startsWith('task-') ? String(x) : `task-${x}`) : [], progress: status === 'done' ? 100 : status === 'running' ? 50 : 0, detail: String(p.description || p.title || '') }; }) : [];
+  const plan = readGameplan();
+  const patches = plan?.patches;
+  const graph = new Map((plan?.dependencyGraph || []).map((edge) => [String(edge.patch), Array.isArray(edge.dependsOn) ? edge.dependsOn : []]));
+  return Array.isArray(patches) ? patches.map((p) => { const n = String(p.number); const a = find(`task-${n}`); const status = taskStatus(a); const dependencies = Array.isArray(p.dependsOn) ? p.dependsOn : graph.get(n) || []; return { id: `task-${n}`, title: String(p.title || `Patch ${n}`), owner: `patch-${n}`, status, dependsOn: dependencies.map((x) => String(x).startsWith('task-') ? String(x) : `task-${x}`), progress: status === 'done' ? 100 : status === 'running' ? 50 : 0, detail: String(p.description || p.title || '') }; }) : [];
 }
 function projected() {
   const persistedState = persisted(); if (persistedState.config) config = { ...config, ...persistedState.config }; if (persistedState.run && !activeProcess) run = persistedState.run;

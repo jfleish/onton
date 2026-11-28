@@ -7,6 +7,17 @@ open Onton_core.Types
 let log_event runtime ?patch_id msg =
   Runtime_logging.log_event runtime ?patch_id msg
 
+let local_gameplan_complete runtime =
+  Runtime.read runtime (fun snapshot ->
+      Base.List.for_all snapshot.Runtime.gameplan.Gameplan.patches ~f:(fun patch ->
+          match
+            Orchestrator.find_agent snapshot.Runtime.orchestrator patch.Patch.id
+          with
+          | Some agent ->
+              (not agent.Patch_agent.busy)
+              && Patch_agent.branch_published agent
+          | None -> false))
+
 let patch_complexity ~(gameplan : Gameplan.t) ~(agent : Patch_agent.t) ~patch_id
     =
   match
@@ -1661,9 +1672,10 @@ module Make (Forge : Forge.S) (W : Worktree.S) (Env : Runner_env.S) = struct
                                            ()))
                                     with
                                     | Ok () ->
-                                        Eio.Time.sleep Env.clock 1.0;
-                                        Stdlib.exit 0
-                                    | Error reason ->
+                                         if local_gameplan_complete runtime then (
+                                            Eio.Time.sleep Env.clock 1.0;
+                                            Stdlib.exit 0)
+                                     | Error reason ->
                                         log_event runtime ~patch_id
                                           ("Local completion persistence failed: " ^
                                            reason))
