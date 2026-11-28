@@ -5,7 +5,7 @@ Branch: `studio-development`
 
 ## Assessment
 
-**INTERNAL BETA GO / PUBLIC BETA NO-GO.** The installed NSIS build and portable build load the packaged Electron frontend and bundled native OCaml engine. Portable real Codex execution completed the three-task acceptance. No public release was published. Internal distribution is acceptable after the documented dependency and SmartScreen warnings; public beta remains blocked on isolated clean-machine acceptance and authorized code signing.
+**INTERNAL BETA LIMITED GO / REAL-PROJECT NO-GO / PUBLIC BETA NO-GO.** The installed NSIS build and portable build load the packaged Electron frontend and bundled native OCaml engine, and independent real Codex tasks work. The internal beta evaluation found unresolved dependency-worktree and restart-recovery failures on a real multi-task project. No public release was published. See `docs/studio-internal-beta-report.md`.
 
 ## Packaged acceptance
 
@@ -21,7 +21,9 @@ Branch: `studio-development`
 | Portable real Codex run | PASS | 2 independent tasks ran concurrently; task 3 waited |
 | Commits/artifacts/transcripts | PASS | commits `68ed1b5`, `bdd2c94`, `e3d7f07`; A/B/C artifacts and transcripts present |
 | Authenticated cancellation | PASS | Onton process tree exited; run persisted as cancelled |
-| Restart recovery | PASS | cancelled run history reopened after portable restart |
+| Restart recovery (prior acceptance) | PASS | cancelled run history reopened after portable restart |
+| Internal beta dependent run | FAIL | `docs/studio-internal-beta-report.md`; task 3 blocked because dependency commits were not materialized into its base |
+| Internal beta restart recovery | FAIL | durable evidence survived, but run was fenced as failed after restart without attachable Onton process |
 | Uninstall repository safety | PASS | disposable repository SHA-256 inventory unchanged |
 | Automated acceptance script | PASS (development host only) | `scripts/accept-studio-windows.ps1`; installer/native/dependency/validation/uninstall/repository checks passed |
 | Clean-machine VM | SKIP | no disposable Windows VM or isolated runner available; do not treat development-host PASS as VM acceptance |
