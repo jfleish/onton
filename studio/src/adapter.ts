@@ -39,17 +39,22 @@ export interface StudioSnapshot {
   version: typeof STUDIO_ADAPTER_VERSION;
   mode: AdapterMode;
   realEnabled: boolean;
-  project: { root: string; name: string; branch: string; dirty: boolean; updatedAt: string; gameplanPath: string | null };
+  project: { root: string; name: string; branch: string; dirty: boolean; updatedAt: string; gameplanPath: string | null; backend: "codex" };
   tasks: StudioTask[];
   agents: StudioAgent[];
   events: StudioEvent[];
   transcripts: Record<string, string[]>;
-  run: { id: string | null; status: RunStatus; startedAt: string | null; endedAt: string | null };
+  artifacts: Record<string, string[]>;
+  commits: string[];
+  run: { id: string | null; status: RunStatus; startedAt: string | null; endedAt: string | null; pid?: number; controlPath?: string; dataDir?: string; fenceReason?: string };
 }
 
 export interface StudioAdapter {
   readonly version: typeof STUDIO_ADAPTER_VERSION;
   getSnapshot(): Promise<StudioSnapshot>;
+  chooseProject(): Promise<StudioSnapshot>;
+  chooseGameplan(): Promise<StudioSnapshot>;
+  chooseBackend(): Promise<StudioSnapshot>;
   runSimulation(): Promise<StudioSnapshot>;
   runReal(): Promise<StudioSnapshot>;
   stopRun(): Promise<StudioSnapshot>;

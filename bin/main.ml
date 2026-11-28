@@ -1290,23 +1290,27 @@ let run_main_loop ~net (setup : runtime_setup) (cap : constructed_capabilities)
     ]
   in
   if headless then (
+    let request_cancel = ref (fun () -> ()) in
     let control_fibers =
       match Stdlib.Sys.getenv_opt "ONTON_CONTROL_SOCKET" with
       | Some path when not (String.is_empty path) ->
           [
             guard_fiber "control"
-              (Control_server.run ~net ~runtime:setup.runtime
+              (Control_server.run_with_cancel ~net ~runtime:setup.runtime
                  ~snapshot_path:(Project_store.snapshot_path project_name)
-                 ~path);
+                 ~path ~on_cancel:(fun () -> (!request_cancel) ()));
           ]
       | Some _ | None -> []
     in
     try
-      Supervisor_guard.run_after_startup ~startup
+      Eio.Cancel.sub (fun cancel ->
+        request_cancel := (fun () -> Eio.Cancel.cancel cancel (Failure "control cancellation requested"));
+        Supervisor_guard.run_after_startup ~startup
         (guard_fiber "headless" (fun () -> Fibers.Headless.run ())
          :: guard_fiber "runner" (fun () -> Fibers.Runner.run ())
          :: control_fibers
         @ common_fibers);
+      );
       report_fatal ()
     with Supervisor_guard.Fatal_supervisor_error _ ->
       save_snapshot ();

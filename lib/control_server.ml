@@ -23,8 +23,7 @@ let authorized_peer flow =
         ~if_closed:(fun () -> false)
         (fun unix_fd -> Int.equal (peer_uid unix_fd) (Unix.geteuid ()))
 
-let execute runtime ~snapshot_path = function
-  | command ->
+let execute_non_cancel runtime ~snapshot_path command =
       let id = Control_command.id command in
       let outcome =
         Runtime.update_persisting runtime
@@ -40,6 +39,7 @@ let execute runtime ~snapshot_path = function
                 | Control_command.Bump { patch_id; _ }
                 | Control_command.Send_human_message { patch_id; _ } ->
                     patch_id
+                | Control_command.Cancel _ -> invalid_arg "cancel dispatch"
               in
               match Orchestrator.find_agent orch patch_id with
               | None -> (snapshot, "unknown_patch")
@@ -65,6 +65,7 @@ let execute runtime ~snapshot_path = function
                           Some
                             (Orchestrator.send_human_message orch patch_id
                                message)
+                    | Control_command.Cancel _ -> invalid_arg "cancel dispatch"
                   in
                   match next with
                   | None -> (
@@ -79,7 +80,8 @@ let execute runtime ~snapshot_path = function
                             "already_applied" )
                       | Control_command.Bump _
                       | Control_command.Send_human_message _ ->
-                          (snapshot, "not_applicable"))
+                          (snapshot, "not_applicable")
+                      | Control_command.Cancel _ -> invalid_arg "cancel dispatch")
                   | Some orchestrator ->
                       ( {
                           snapshot with
@@ -107,11 +109,18 @@ let execute runtime ~snapshot_path = function
                  "Bumped — cleared intervention state by control command" )
            | Control_command.Send_human_message { patch_id; _ } ->
                (patch_id, "Human message accepted by control command")
+           | Control_command.Cancel _ -> invalid_arg "cancel dispatch"
          in
          Runtime_logging.log_event runtime ~patch_id message);
       outcome
 
-let command_response runtime ~snapshot_path flow =
+let execute runtime ~snapshot_path = function
+  | Control_command.Cancel _ -> "cancellation_requested"
+  | (Control_command.Set_automerge _ | Control_command.Bump _
+    | Control_command.Send_human_message _) as command ->
+      execute_non_cancel runtime ~snapshot_path command
+
+let command_response ?(on_cancel = fun () -> ()) runtime ~snapshot_path flow =
   try
     let reader = Eio.Buf_read.of_flow ~max_size:4096 flow in
     let line = Eio.Buf_read.line reader in
@@ -119,17 +128,21 @@ let command_response runtime ~snapshot_path flow =
     | json -> (
         match Control_command.decode json with
         | Error _ -> response ~id:"" ~status:"invalid_command"
-        | Ok command ->
+        | Ok (Control_command.Cancel { id }) ->
+             on_cancel ();
+             response ~id ~status:"cancellation_requested"
+         | Ok ((Control_command.Set_automerge _ | Control_command.Bump _
+              | Control_command.Send_human_message _) as command) ->
             response ~id:(Control_command.id command)
               ~status:(execute runtime ~snapshot_path command))
   with
   | End_of_file | Eio.Buf_read.Buffer_limit_exceeded | Yojson.Json_error _ ->
       response ~id:"" ~status:"invalid_command"
 
-let handle runtime ~snapshot_path flow =
+let handle ?(on_cancel = fun () -> ()) runtime ~snapshot_path flow =
   let reply =
     if not (authorized_peer flow) then response ~id:"" ~status:"unauthorized"
-    else command_response runtime ~snapshot_path flow
+    else command_response ~on_cancel runtime ~snapshot_path flow
   in
   Eio.Flow.copy_string reply flow
 
@@ -152,7 +165,7 @@ let write_windows_endpoint path port token =
     ~finally:(fun () -> Stdlib.close_out_noerr channel)
     (fun () -> Stdlib.output_string channel endpoint; Stdlib.flush channel)
 
-let run_windows ~net ~runtime ~snapshot_path ~path () =
+let run_windows ?(on_cancel = fun () -> ()) ~net ~runtime ~snapshot_path ~path () =
   let parent = Stdlib.Filename.dirname path in
   if Stdlib.Filename.is_relative path then
     invalid_arg "control endpoint path must be absolute";
@@ -186,14 +199,14 @@ let run_windows ~net ~runtime ~snapshot_path ~path () =
               let reader = Eio.Buf_read.of_flow ~max_size:4096 flow in
               if not (String.equal (Eio.Buf_read.line reader) token) then
                 response ~id:"" ~status:"unauthorized"
-              else command_response runtime ~snapshot_path flow
+              else command_response ~on_cancel runtime ~snapshot_path flow
             with End_of_file | Eio.Buf_read.Buffer_limit_exceeded | Yojson.Json_error _ ->
               response ~id:"" ~status:"invalid_command"
           in
           Eio.Flow.copy_string reply flow))
 
-let run ~net ~runtime ~snapshot_path ~path () =
-  if Host.is_windows then run_windows ~net ~runtime ~snapshot_path ~path ()
+let run_with_cancel ?(on_cancel = fun () -> ()) ~net ~runtime ~snapshot_path ~path () =
+  if Host.is_windows then run_windows ~on_cancel ~net ~runtime ~snapshot_path ~path ()
   else (
     let parent = Stdlib.Filename.dirname path in
     if Stdlib.Filename.is_relative path then
@@ -216,4 +229,7 @@ let run ~net ~runtime ~snapshot_path ~path () =
           ~on_error:(fun ex ->
             Stdlib.Printf.eprintf "onton control socket: %s\n%!" (Exn.to_string ex))
           socket
-          (fun flow _ -> handle runtime ~snapshot_path flow)))
+          (fun flow _ -> handle ~on_cancel runtime ~snapshot_path flow)))
+
+let run ~net ~runtime ~snapshot_path ~path () =
+  run_with_cancel ~net ~runtime ~snapshot_path ~path ()

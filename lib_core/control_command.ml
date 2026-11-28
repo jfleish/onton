@@ -15,14 +15,13 @@ type t =
       patch_id : Types.Patch_id.t;
       message : string;
     }
+  | Cancel of { id : string }
 
 let decode = function
   | `Assoc fields -> (
       let find name = List.assoc_opt name fields in
       match (find "version", find "id", find "type", find "payload") with
-      | ( Some (`Int 1),
-          Some (`String id),
-          Some (`String "set_automerge"),
+      | ( Some (`Int 1), Some (`String id), Some (`String "set_automerge"),
           Some (`Assoc payload) )
         when id <> "" -> (
           match
@@ -33,18 +32,14 @@ let decode = function
                 (Set_automerge
                    { id; patch_id = Types.Patch_id.of_string patch_id; enabled })
           | _ -> Error "invalid command")
-      | ( Some (`Int 1),
-          Some (`String id),
-          Some (`String "bump"),
+      | ( Some (`Int 1), Some (`String id), Some (`String "bump"),
           Some (`Assoc payload) )
         when id <> "" -> (
           match List.assoc_opt "patch_id" payload with
           | Some (`String patch_id) when patch_id <> "" ->
               Ok (Bump { id; patch_id = Types.Patch_id.of_string patch_id })
           | _ -> Error "invalid command")
-      | ( Some (`Int 1),
-          Some (`String id),
-          Some (`String "send_human_message"),
+      | ( Some (`Int 1), Some (`String id), Some (`String "send_human_message"),
           Some (`Assoc payload) )
         when id <> "" -> (
           match
@@ -56,14 +51,19 @@ let decode = function
                 (Send_human_message
                    { id; patch_id = Types.Patch_id.of_string patch_id; message })
           | _ -> Error "invalid command")
+      | (Some (`Int 1), Some (`String id), Some (`String "cancel"),
+         Some (`Assoc _))
+        when id <> "" -> Ok (Cancel { id })
       | _ when find "version" <> Some (`Int 1) ->
           Error "unsupported command version"
       | _ -> Error "invalid command")
   | _ -> Error "invalid command"
 
 let id = function
-  | Set_automerge { id; _ } | Bump { id; _ } | Send_human_message { id; _ } ->
-      id
+  | Set_automerge { id; _ }
+  | Bump { id; _ }
+  | Send_human_message { id; _ }
+  | Cancel { id } -> id
 
 let max_retained_ids = 1024
 let recent_ids ids = List.filteri (fun index _ -> index < max_retained_ids) ids

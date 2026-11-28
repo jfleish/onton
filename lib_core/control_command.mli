@@ -13,6 +13,7 @@ type t =
       patch_id : Types.Patch_id.t;
       message : string;
     }
+  | Cancel of { id : string }
 
 val decode : Yojson.Safe.t -> (t, string) result
 val id : t -> string

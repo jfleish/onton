@@ -38,7 +38,7 @@ let roundtrip =
             command.id = id
             && Types.Patch_id.to_string command.patch_id = patch_id
             && command.enabled = enabled
-        | Ok (Control_command.Bump _ | Control_command.Send_human_message _) ->
+        | Ok (Control_command.Bump _ | Control_command.Send_human_message _ | Control_command.Cancel _) ->
             false
         | Error _ -> false)
 
@@ -66,7 +66,8 @@ let bump_roundtrip =
             && Types.Patch_id.to_string command.patch_id = patch_id
         | Ok
             ( Control_command.Set_automerge _
-            | Control_command.Send_human_message _ )
+            | Control_command.Send_human_message _
+             | Control_command.Cancel _ )
         | Error _ ->
             false)
 
@@ -86,7 +87,7 @@ let human_message_roundtrip =
             command.id = id
             && Types.Patch_id.to_string command.patch_id = patch_id
             && command.message = message
-        | Ok (Control_command.Set_automerge _ | Control_command.Bump _)
+        | Ok (Control_command.Set_automerge _ | Control_command.Bump _ | Control_command.Cancel _)
         | Error _ ->
             false)
 
