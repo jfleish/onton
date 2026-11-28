@@ -10,6 +10,7 @@
     "studio:build": "tsc -p studio/tsconfig.json",
     "studio:start": "npm run studio:build && electron studio/main.cjs",
     "studio:check": "tsc -p studio/tsconfig.json --noEmit",
+    "studio:test": "npm run studio:build && node --test studio/test/*.test.mjs",
     "studio:stage-native": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/stage-native.ps1",
     "studio:package": "npm run studio:build && npm run studio:stage-native && electron-builder --win nsis portable --x64",
     "studio:package:dir": "npm run studio:build && npm run studio:stage-native && electron-builder --win --dir --x64"

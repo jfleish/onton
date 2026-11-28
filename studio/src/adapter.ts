@@ -9,8 +9,10 @@ export interface StudioTask {
   owner: string;
   status: TaskStatus;
   dependsOn: string[];
-  progress: number;
+  progress: number | null;
   detail: string;
+  agentId: string | null;
+  commit: string | null;
 }
 
 export interface StudioAgent {

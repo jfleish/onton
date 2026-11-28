@@ -75,7 +75,9 @@ function authoritativeTasks(snap) {
   const plan = readGameplan();
   const patches = plan?.patches;
   const graph = new Map((plan?.dependencyGraph || []).map((edge) => [String(edge.patch), Array.isArray(edge.dependsOn) ? edge.dependsOn : []]));
-  return Array.isArray(patches) ? patches.map((p) => { const n = String(p.number); const a = find(`task-${n}`); const status = taskStatus(a); const dependencies = Array.isArray(p.dependsOn) ? p.dependsOn : graph.get(n) || []; return { id: `task-${n}`, title: String(p.title || `Patch ${n}`), owner: `patch-${n}`, status, dependsOn: dependencies.map((x) => String(x).startsWith('task-') ? String(x) : `task-${x}`), progress: status === 'done' ? 100 : status === 'running' ? 50 : 0, detail: String(p.description || p.title || '') }; }) : [];
+  return Array.isArray(patches) ? patches.map((p) => { const n = String(p.number); const a = find(`task-${n}`); const status = taskStatus(a); const dependencies = Array.isArray(p.dependsOn) ? p.dependsOn : graph.get(n) || []; const publications = Array.isArray(a?.branch_reconcile?.publications) ? a.branch_reconcile.publications : [];
+       const commit = publications.at(-1)?.published_revision ? String(publications.at(-1).published_revision) : null;
+       return { id: `task-${n}`, title: String(p.title || `Patch ${n}`), owner: `patch-${n}`, status, dependsOn: dependencies.map((x) => String(x).startsWith('task-') ? String(x) : `task-${x}`), progress: status === 'done' ? 100 : null, detail: String(p.description || p.title || ''), agentId: a ? `task-${n}` : null, commit }; }) : [];
 }
 function projected() {
   const persistedState = persisted(); if (persistedState.config) config = { ...config, ...persistedState.config }; if (persistedState.run && !activeProcess) run = persistedState.run;
