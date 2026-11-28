@@ -36,16 +36,18 @@ export interface StudioEvent {
 
 export type AdapterMode = "local" | "simulated" | "real";
 export type RunStatus = "idle" | "running" | "completed" | "failed" | "cancelled";
+export type StudioBackend = "claude" | "codex" | "opencode" | "pi" | "gemini";
+export type StudioForge = "auto" | "github" | "sourcehut" | "local";
 
 export interface StudioGameplan { name: string; path: string; selected: boolean; }
 export interface StudioRecentProject { root: string; lastUsed: string; }
-export interface StudioConfig { backend: "codex"; forge: "local"; mainBranch: string; maxConcurrency: number; }
+export interface StudioConfig { backend: StudioBackend; forge: StudioForge; mainBranch: string; maxConcurrency: number; }
 export interface StudioDependencies { git: boolean; codex: boolean; codexAuthenticated: boolean; }
 export interface StudioSnapshot {
   version: typeof STUDIO_ADAPTER_VERSION;
   mode: AdapterMode;
   realEnabled: boolean;
-  project: { root: string; name: string; branch: string; dirty: boolean; updatedAt: string; gameplanPath: string | null; backend: "codex" };
+  project: { root: string; name: string; branch: string; dirty: boolean; updatedAt: string; gameplanPath: string | null; backend: StudioBackend };
   gameplan: Record<string, unknown> | null;
   gameplans: StudioGameplan[];
   recents: StudioRecentProject[];
@@ -71,7 +73,6 @@ export interface StudioAdapter {
   saveConfig(patch: Partial<StudioConfig>): Promise<StudioSnapshot>;
   saveGameplan(document: Record<string, unknown>): Promise<StudioSnapshot>;
   validateGameplan(file: string): Promise<StudioSnapshot>;
-  runSimulation(): Promise<StudioSnapshot>;
   runReal(): Promise<StudioSnapshot>;
   stopRun(): Promise<StudioSnapshot>;
   onEvent(listener: (snapshot: StudioSnapshot) => void): () => void;

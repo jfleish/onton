@@ -10,7 +10,6 @@ contextBridge.exposeInMainWorld('ontonStudio', {
   saveConfig: (patch) => ipcRenderer.invoke('studio:save-config', patch),
   saveGameplan: (document) => ipcRenderer.invoke('studio:save-gameplan', document),
   validateGameplan: (file) => ipcRenderer.invoke('studio:validate-gameplan', file),
-  runSimulation: () => ipcRenderer.invoke('studio:run-simulation'),
   runReal: () => ipcRenderer.invoke('studio:run-real'),
   stopRun: () => ipcRenderer.invoke('studio:stop-run'),
   onEvent: (listener) => {
