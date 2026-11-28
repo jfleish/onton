@@ -5,7 +5,7 @@ Branch: `studio-development`
 
 ## Assessment
 
-**INTERNAL BETA LIMITED GO / REAL-PROJECT NO-GO / PUBLIC BETA NO-GO.** The installed NSIS build and portable build load the packaged Electron frontend and bundled native OCaml engine, and independent real Codex tasks work. The internal beta evaluation found unresolved dependency-worktree and restart-recovery failures on a real multi-task project. No public release was published. See `docs/studio-internal-beta-report.md`.
+**INTERNAL BETA GO / REAL-PROJECT GO / PUBLIC BETA NO-GO.** The fixed packaged engine completed the real four-task local-forge acceptance with verified prerequisite content and ancestry. Public beta remains blocked by clean-machine validation, signing, and the remaining headless restart-exit behavior. See `docs/studio-internal-beta-report.md`.
 
 ## Packaged acceptance
 
@@ -22,8 +22,10 @@ Branch: `studio-development`
 | Commits/artifacts/transcripts | PASS | commits `68ed1b5`, `bdd2c94`, `e3d7f07`; A/B/C artifacts and transcripts present |
 | Authenticated cancellation | PASS | Onton process tree exited; run persisted as cancelled |
 | Restart recovery (prior acceptance) | PASS | cancelled run history reopened after portable restart |
-| Internal beta dependent run | FAIL | `docs/studio-internal-beta-report.md`; task 3 blocked because dependency commits were not materialized into its base |
-| Internal beta restart recovery | FAIL | durable evidence survived, but run was fenced as failed after restart without attachable Onton process |
+| Internal beta dependent run (baseline) | FAIL | Historical failure retained in `docs/studio-internal-beta-report.md` |
+| Dependency integration regression | PASS | `test_worktree_backend_integration.exe`; fan-in content/ancestry and conflict-abort checks |
+| Fixed packaged four-task validation | PASS | Disposable clone completed all four tasks; integrated content, exact SHAs, worktree HEADs, ancestry, timestamps, and local-only forge verified |
+| Restart state recovery | PASS with limitation | All four worktrees and merged/head SHA state recovered; headless process did not exit automatically after terminal recovery |
 | Uninstall repository safety | PASS | disposable repository SHA-256 inventory unchanged |
 | Automated acceptance script | PASS (development host only) | `scripts/accept-studio-windows.ps1`; installer/native/dependency/validation/uninstall/repository checks passed |
 | Clean-machine VM | SKIP | no disposable Windows VM or isolated runner available; do not treat development-host PASS as VM acceptance |
@@ -51,16 +53,16 @@ The OCaml engine remains authoritative for scheduling, dependency gates, worktre
 Installer:
 
 ```text
-9D25A7244859582BE5F2888568A3DFEAB1AD0B032463FF79D297191E8A23F2F3  Onton-Studio-0.1.0-x64.exe
-863037A2BEE7145F867BFF69DFB272C5BD5D36440CD7A840D62F199CC83492CD  Onton-Studio-0.1.0-x64-portable.exe
+FC23A90822E016BD2769E394BBFC90DAF401B2E76CD42E3FF0BC7CF9B477A3BF  Onton-Studio-0.1.0-x64.exe
+1C97F90800821685EE3677FA7649F24449C0F51526FB9584FA39E87CA48256E4  Onton-Studio-0.1.0-x64-portable.exe
 ```
 
 Native payload:
 
 ```text
-262CF40AE491AE34B7E31B96AACAEDD055E8641F7D3E327DB896659C58C81767  onton.exe
-FAD52F02570F70CB6C2D8805779FA70736A64DC218F63B700DBD9F6399E2144B  onton-coordinator.exe
-7797992FB7980B8502A6BDC9536E6EF1E0AFB6953F83BDC6C5E31B8E921823F1  onton-worker.exe
+289B6036A4FFA3E490F28F82756BCA839D4E0020DFB304C57A963ADE65F5C809  onton.exe
+F53BB89AB31D360B2C8898BFC44ED18AC1BE5178BB3B6DD4E76EF8EBEF983070  onton-coordinator.exe
+939DF670BB5936AA6E848467BD3639FBEB3ACCE40256DE1611CBA6FF93D12C5E  onton-worker.exe
 C5EDF68200440B62D1F255903B3DC9BFC004028EF5216703EE7F9235CD4A7432  onton-setsid-exec.exe
 37248CDA33845E7C5C35A574E57DA762DD0A8268F0270D179F30A33746809681  libgmp-10.dll
 ```

@@ -341,11 +341,13 @@ let complete t patch_id =
                   };
           })
 
-let complete_local t patch_id =
+let complete_local ?head_oid t patch_id =
   (* Local completion is the dependency boundary for this forge-less profile;
-     it records no PR/CI/merge evidence and only unblocks local dependents. *)
+     retain the committed HEAD so dependent worktrees can materialize it. *)
   update_agent (complete t patch_id) patch_id ~f:(fun agent ->
-      agent |> Patch_agent.mark_merged |> Patch_agent.clear_session_completion)
+      let agent = Patch_agent.mark_merged agent in
+      let agent = Patch_agent.set_head_oid agent head_oid in
+      Patch_agent.clear_session_completion agent)
 
 let prepare_rebase_after_checkpoint_failure t patch_id =
   match find_agent t patch_id with
@@ -1132,6 +1134,31 @@ let apply_automerge_failure_state t patch_id ~retry_deadline ~max_failures =
 
 let all_agents t = Map.data t.agents
 let graph t = t.graph
+
+let dependency_revisions t patch_id =
+  let dependencies =
+    Graph.deps t.graph patch_id |> List.sort ~compare:Patch_id.compare
+  in
+  let rec collect acc = function
+    | [] -> Ok (List.rev acc)
+    | dependency :: rest -> (
+        match find_agent t dependency with
+        | None ->
+            Error ("missing dependency agent " ^ Patch_id.to_string dependency)
+        | Some agent -> (
+            let revision =
+              if agent.merged then
+                Option.first_some agent.merge_commit_sha agent.head_oid
+              else None
+            in
+            match revision with
+            | Some revision -> collect (revision :: acc) rest
+            | None ->
+                Error
+                  ("dependency revision unconfirmed for "
+                  ^ Patch_id.to_string dependency)))
+  in
+  collect [] dependencies
 
 let restore ?(promotion_claimed = false) ~graph ~agents ~outbox ~main_branch ()
     =

@@ -1020,9 +1020,115 @@ let lifecycle_sequences env =
                   operations))
       with _ -> false)
 
+let dependency_integration env =
+  G.with_temp_repo (fun repo ->
+      write (Filename.concat repo "shared.txt") "base\n";
+      G.run_git ~cwd:repo [ "add"; "shared.txt" ];
+      G.run_git ~cwd:repo [ "commit"; "-qm"; "base" ];
+      let base = G.git_capture ~cwd:repo [ "rev-parse"; "HEAD" ] in
+      let make_branch name text =
+        G.run_git ~cwd:repo [ "branch"; name; base ];
+        G.run_git ~cwd:repo [ "switch"; name ];
+        write (Filename.concat repo (name ^ ".txt")) text;
+        G.run_git ~cwd:repo [ "add"; name ^ ".txt" ];
+        G.run_git ~cwd:repo [ "commit"; "-qm"; name ];
+        let head = G.git_capture ~cwd:repo [ "rev-parse"; "HEAD" ] in
+        G.run_git ~cwd:repo [ "switch"; "main" ];
+        head
+      in
+      let a = make_branch "dependency-a" "A\n" in
+      let b = make_branch "dependency-b" "B\n" in
+      let module W =
+        (val Worktree.make ~fs:(Eio.Stdenv.fs env) ~config:L.git
+               ~clock:(Eio.Stdenv.clock env)
+               ~process_mgr:(Eio.Stdenv.process_mgr env)
+               ~repo_root:repo)
+      in
+      let path =
+        Worktree.worktree_dir ~project_name:"integration-test"
+          ~patch_id:(Types.Patch_id.of_string "3")
+      in
+      let checkout =
+        match
+          W.create ~project_name:"integration-test"
+            ~patch_id:(Types.Patch_id.of_string "3")
+            ~branch:(branch "dependent") ~base_ref:base
+        with
+        | Ok checkout -> checkout
+        | Error _ -> failwith "dependent worktree creation refused"
+      in
+      Fun.protect
+        ~finally:(fun () -> W.remove ~discard:true checkout)
+        (fun () ->
+          match W.integrate_commits ~path ~revisions:[ a; b ] with
+          | Error reason -> failwith reason
+          | Ok head ->
+              check "integrated HEAD is nonempty" (String.length head = 40);
+              check "A content present"
+                (Sys.file_exists (Filename.concat path "dependency-a.txt"));
+              check "B content present"
+                (Sys.file_exists (Filename.concat path "dependency-b.txt"));
+              check "A ancestor"
+                (W.is_ancestor ~path ~ancestor:a ~descendant:head);
+              check "B ancestor"
+                (W.is_ancestor ~path ~ancestor:b ~descendant:head)));
+
+  G.with_temp_repo (fun repo ->
+      write (Filename.concat repo "shared.txt") "base\n";
+      G.run_git ~cwd:repo [ "add"; "shared.txt" ];
+      G.run_git ~cwd:repo [ "commit"; "-qm"; "base" ];
+      let base = G.git_capture ~cwd:repo [ "rev-parse"; "HEAD" ] in
+      let conflicting_branch name text =
+        G.run_git ~cwd:repo [ "branch"; name; base ];
+        G.run_git ~cwd:repo [ "switch"; name ];
+        write (Filename.concat repo "shared.txt") text;
+        G.run_git ~cwd:repo [ "add"; "shared.txt" ];
+        G.run_git ~cwd:repo [ "commit"; "-qm"; name ];
+        let head = G.git_capture ~cwd:repo [ "rev-parse"; "HEAD" ] in
+        G.run_git ~cwd:repo [ "switch"; "main" ];
+        head
+      in
+      let a = conflicting_branch "conflict-a" "A\n" in
+      let b = conflicting_branch "conflict-b" "B\n" in
+      let module W =
+        (val Worktree.make ~fs:(Eio.Stdenv.fs env) ~config:L.git
+               ~clock:(Eio.Stdenv.clock env)
+               ~process_mgr:(Eio.Stdenv.process_mgr env)
+               ~repo_root:repo)
+      in
+      let patch_id = Types.Patch_id.of_string "4" in
+      let path =
+        Worktree.worktree_dir ~project_name:"integration-test" ~patch_id
+      in
+      let checkout =
+        match
+          W.create ~project_name:"integration-test" ~patch_id
+            ~branch:(branch "conflict-dependent")
+            ~base_ref:base
+        with
+        | Ok checkout -> checkout
+        | Error _ -> failwith "conflict worktree creation refused"
+      in
+      Fun.protect
+        ~finally:(fun () -> W.remove ~discard:true checkout)
+        (fun () ->
+          check "conflict is blocked"
+            (Result.is_error (W.integrate_commits ~path ~revisions:[ a; b ]));
+          let head = G.git_capture ~cwd:path [ "rev-parse"; "HEAD" ] in
+          check "first prerequisite retained"
+            (W.is_ancestor ~path ~ancestor:a ~descendant:head);
+          check "conflict worktree is clean after abort"
+            (String.is_empty
+               (G.git_capture ~cwd:path [ "status"; "--porcelain" ]));
+          check "no merge remains in progress"
+            (G.git_exit_code ~cwd:path
+               [ "rev-parse"; "-q"; "--verify"; "MERGE_HEAD" ]
+            <> 0)))
+
 let () =
   Eio_main.run (fun env ->
       status_failure_is_not_clean env;
+      dependency_integration env;
       QCheck2.Test.check_exn (lifecycle_sequences env);
       fixture env L.git;
       renamed_checkout env;

@@ -47,6 +47,7 @@ module Fake_worktree : Worktree.S = struct
     String.equal ancestor "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
     && String.equal descendant "cccccccccccccccccccccccccccccccccccccccc"
 
+  let integrate_commits ~path:_ ~revisions:_ = Ok "fixture-head"
   let commit_gameplan ~path:_ ~publication:_ ~message:_ = assert false
 
   let materialization ~path:_ ~project_name:_ ~branch:_ =
@@ -108,7 +109,7 @@ let run_case env ~capture_session ~respond =
       (match old with
       | Some value -> Unix.putenv "ONTON_DATA_DIR" value
       | None -> Unix.unsetenv "ONTON_DATA_DIR");
-       Onton_test_support.Git_env.rm_rf root)
+      Onton_test_support.Git_env.rm_rf root)
     ~f:(fun () ->
       let patch_id = Patch_id.of_string "p1" in
       let main = Branch.of_string "main" in

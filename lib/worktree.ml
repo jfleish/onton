@@ -450,6 +450,55 @@ let is_ancestor ~process_mgr ~path ~ancestor ~descendant =
   in
   code = 0
 
+let integrate_commits ~process_mgr ~path ~revisions =
+  let git args =
+    run_git_exit_code ~process_mgr ([ "git"; "-C"; path ] @ args)
+  in
+  let status_code, status, status_error = git [ "status"; "--porcelain" ] in
+  if status_code <> 0 then
+    Error ("cannot inspect dependency worktree: " ^ status_error)
+  else if not (String.is_empty (String.strip status)) then
+    Error "dependency worktree is dirty before integration"
+  else
+    let merge revision =
+      match Branch_reconcile.Commit.make revision with
+      | None -> Error ("invalid prerequisite revision: " ^ revision)
+      | Some _ ->
+          let code, output, error =
+            git [ "merge"; "--no-edit"; "--no-ff"; revision ]
+          in
+          if code = 0 then Ok ()
+          else
+            let abort_code, _, abort_error = git [ "merge"; "--abort" ] in
+            let suffix =
+              if abort_code = 0 then ""
+              else " (merge abort failed: " ^ abort_error ^ ")"
+            in
+            Error
+              (Printf.sprintf "prerequisite integration conflict for %s: %s%s"
+                 revision
+                 (String.strip (error ^ " " ^ output))
+                 suffix)
+    in
+    match
+      List.fold revisions ~init:(Ok ()) ~f:(fun result revision ->
+          match result with
+          | Ok () -> merge revision
+          | Error _ as error -> error)
+    with
+    | Error _ as error -> error
+    | Ok () ->
+        let head_code, head, head_error = git [ "rev-parse"; "HEAD" ] in
+        if head_code <> 0 then
+          Error ("cannot verify integrated HEAD: " ^ head_error)
+        else if
+          List.for_all revisions ~f:(fun revision ->
+              is_ancestor ~process_mgr ~path ~ancestor:revision
+                ~descendant:(String.strip head))
+        then Ok (String.strip head)
+        else
+          Error "integrated HEAD does not contain every prerequisite revision"
+
 type push_result = Worktree_parser.push_result =
   | Push_ok
   | Push_up_to_date
@@ -620,6 +669,12 @@ module type S = sig
 
   val is_ancestor : path:string -> ancestor:string -> descendant:string -> bool
 
+  val integrate_commits :
+    path:string -> revisions:string list -> (string, string) Result.t
+  (** Merge exact prerequisite revisions into an already materialized checkout.
+      The revisions are applied in caller-provided deterministic order. A
+      conflict is aborted and returned as an actionable error. *)
+
   val commit_gameplan :
     path:string ->
     publication:Gameplan_publication.t ->
@@ -782,6 +837,9 @@ let make ~fs ~config ~clock ~process_mgr ~repo_root =
 
     let is_ancestor ~path ~ancestor ~descendant =
       is_ancestor ~process_mgr ~path ~ancestor ~descendant
+
+    let integrate_commits ~path ~revisions =
+      integrate_commits ~process_mgr ~path ~revisions
 
     let commit_gameplan ~path ~publication ~message =
       commit_gameplan ~clock ~process_mgr ~path ~publication ~message

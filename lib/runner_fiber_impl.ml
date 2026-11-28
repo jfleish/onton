@@ -15,7 +15,8 @@ let local_gameplan_complete runtime =
           with
           | Some agent ->
               (not agent.Patch_agent.busy)
-              && Patch_agent.branch_published agent
+              && (agent.Patch_agent.merged
+                  || Patch_agent.branch_published agent)
           | None -> false))
 
 let patch_complexity ~(gameplan : Gameplan.t) ~(agent : Patch_agent.t) ~patch_id
@@ -164,6 +165,29 @@ module Make (Forge : Forge.S) (W : Worktree.S) (Env : Runner_env.S) = struct
 
   module WS = Worktree_setup.Make (W) (WS_Env)
   module Session_driver = Session_driver.Make (W) (SD_Env)
+
+  let prepare_local_dependencies ~patch_id ~path =
+    if not (String.equal Forge.name "local") then Ok ()
+    else
+      let revisions_result =
+        Runtime.read Env.runtime (fun snap ->
+            Orchestrator.dependency_revisions snap.Runtime.orchestrator patch_id)
+      in
+      match revisions_result with
+      | Error reason -> Error reason
+      | Ok [] -> Ok ()
+      | Ok revisions -> (
+          match W.integrate_commits ~path ~revisions with
+          | Ok head ->
+              log_event Env.runtime ~patch_id
+                (Printf.sprintf
+                   "Integrated %d prerequisite revisions into worktree HEAD %s"
+                   (List.length revisions) head);
+              Ok ()
+          | Error reason ->
+              log_event Env.runtime ~patch_id
+                ("Prerequisite integration blocked: " ^ reason);
+              Error reason)
 
   module Busy_guard_env = struct
     let runtime = Env.runtime
@@ -1552,6 +1576,12 @@ module Make (Forge : Forge.S) (W : Worktree.S) (Env : Runner_env.S) = struct
                                       with
                                       | Worktree_setup.Unavailable _ -> `Failed
                                       | Worktree_setup.Path _wt_path ->
+                                           (match
+                                              prepare_local_dependencies ~patch_id
+                                                ~path:_wt_path
+                                            with
+                                            | Error _ -> `Failed
+                                            | Ok () ->
                                           (* Owned provisioning has already checkpointed the
                                            materialization receipt before session dispatch. *)
                                           let has_existing_changes =
@@ -1610,7 +1640,7 @@ module Make (Forge : Forge.S) (W : Worktree.S) (Env : Runner_env.S) = struct
                                                | `Ok
                                                | `No_commits
                                                | `Retry_push
-                                               | `Stale ])))
+                                               | `Stale ]))))
                             in
                             let start_outcome =
                               match result with
@@ -1656,7 +1686,21 @@ module Make (Forge : Forge.S) (W : Worktree.S) (Env : Runner_env.S) = struct
                                    log_event runtime ~patch_id
                                      "Local completion accepted from committed \
                                       worktree state";
-                                                                       match
+                                    let local_agent =
+                                      Runtime.read runtime (fun snap ->
+                                          Orchestrator.agent snap.Runtime.orchestrator
+                                            patch_id)
+                                    in
+                                    let local_head =
+                                      W.read_branch_sha
+                                        ~path:
+                                          (Option.value local_agent.worktree_path
+                                             ~default:
+                                               (Worktree.worktree_dir ~project_name
+                                                  ~patch_id))
+                                        ~ref_name:"HEAD"
+                                    in
+                                    match
                                       Runtime.update_persisting runtime
                                         ~persist:
                                           (Persistence.save_snapshot
@@ -1667,8 +1711,9 @@ module Make (Forge : Forge.S) (W : Worktree.S) (Env : Runner_env.S) = struct
                                           ({ snap with
                                              Runtime.orchestrator =
                                                Orchestrator.complete_local
-                                                 snap.Runtime.orchestrator
-                                                 patch_id },
+                                                  ?head_oid:local_head
+                                                  snap.Runtime.orchestrator
+                                                  patch_id },
                                            ()))
                                     with
                                     | Ok () ->

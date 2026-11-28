@@ -51,6 +51,7 @@ module Fake_worktree : Worktree.S = struct
     String.equal ancestor "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
     && String.equal descendant "cccccccccccccccccccccccccccccccccccccccc"
 
+  let integrate_commits ~path:_ ~revisions:_ = Ok "fixture-head"
   let commit_gameplan ~path:_ ~publication:_ ~message:_ = assert false
 
   let materialization ~path:_ ~project_name:_ ~branch:_ =

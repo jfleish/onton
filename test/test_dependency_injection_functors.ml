@@ -38,6 +38,7 @@ module Fake_worktree : Worktree.S = struct
   let read_branch_sha ~path:_ ~ref_name:_ = None
   let probe_branch_sha ~path:_ ~ref_name:_ = Ok None
   let is_ancestor ~path:_ ~ancestor:_ ~descendant:_ = false
+  let integrate_commits ~path:_ ~revisions:_ = Ok "fixture-head"
   let commit_gameplan ~path:_ ~publication:_ ~message:_ = assert false
   let materialization ~path:_ ~project_name:_ ~branch:_ = Ok None
 

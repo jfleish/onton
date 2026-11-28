@@ -272,6 +272,11 @@ module type S = sig
       unresolvable SHAs), so callers can treat it as a total
       pure-from-the-outside oracle. *)
 
+  val integrate_commits :
+    path:string -> revisions:string list -> (string, string) Result.t
+  (** Merge exact prerequisite revisions in deterministic order, aborting and
+      reporting conflicts without discarding committed work. *)
+
   val commit_gameplan :
     path:string ->
     publication:Gameplan_publication.t ->

@@ -76,6 +76,7 @@ let () =
     let read_branch_sha ~path:_ ~ref_name:_ = reject ()
     let probe_branch_sha ~path:_ ~ref_name:_ = reject ()
     let is_ancestor ~path:_ ~ancestor:_ ~descendant:_ = reject ()
+    let integrate_commits ~path:_ ~revisions:_ = reject ()
     let commit_gameplan ~path:_ ~publication:_ ~message:_ = reject ()
     let materialization ~path:_ ~project_name:_ ~branch:_ = reject ()
     let reconcile ~path:_ ~project_name:_ ~branch:_ ~operation:_ _ = reject ()

@@ -6,9 +6,9 @@ Evaluation type: local packaged Windows x64 beta run; no public services or exte
 
 ## Executive assessment
 
-**NO-GO for a real multi-step dependent software project.** Studio is usable for setup, local Codex execution, independent tasks, commit/transcript capture, and basic failure visibility. It is not yet reliable enough for a realistic dependency chain: a dependent task was scheduled only after its prerequisites completed, but its worktree was based on the unchanged base branch and did not contain the prerequisite commits. The dependent task correctly refused to fabricate a result, but the run could not complete.
+**GO for the local-only real-project dependency path; NO-GO for public beta pending clean-machine and broader restart-supervisor validation.** The original run remains the failure baseline. The fixed packaged engine now materializes confirmed prerequisite revisions into local dependent worktrees before agent launch, with deterministic fan-in ordering, clean-worktree checks, ancestry verification, and conflict aborts.
 
-The OCaml engine remained the execution authority. No orchestration logic was duplicated in Electron. One critical Electron correctness fix was made for non-`main` repositories; the dependency/worktree and restart issues remain unresolved because fixing them requires coordinated OCaml scheduler/recovery work rather than a safe UI-only patch.
+The OCaml engine remains the execution authority. No orchestration logic was duplicated in Electron. A new packaged four-task acceptance on a disposable Onton clone completed all four tasks and verified integrated content, exact Git ancestry, local-only forge behavior, and persisted restart state.
 
 ## Real project and isolation
 
@@ -64,6 +64,20 @@ After the run reached the dependency blocker, Studio was stopped and restarted u
 
 Thus durable evidence survived, but run-state recovery did not preserve the prior terminal/blocker state as a recoverable completed run.
 
+## Dependency fix validation
+
+The source fix is implemented on `studio-development`:
+
+- `Orchestrator.dependency_revisions` admits only merged agents with a confirmed `merge_commit_sha` or `head_oid`, sorted by patch ID.
+- Local runner admission merges exact prerequisite SHAs into the dependent worktree before the agent starts. GitHub/SourceHut paths are unchanged.
+- Integration refuses dirty worktrees, verifies every prerequisite is an ancestor of the resulting HEAD, and aborts conflicts without discarding prior prerequisite merges.
+- `dune build`: PASS.
+- `test/test_worktree_backend_integration.exe`: PASS, including linear fan-in content, ancestry, and conflict-abort/clean-state checks.
+- `test/test_gameplan_parser_properties.exe`: PASS, 25 tests.
+- Rebuilt packaged acceptance: installer, all five native resources, Codex/Git detection, canonical four-task validation, packaged launch, uninstall, and repository preservation all PASS. Development-host isolation was SKIP.
+
+The fixed packaged four-task acceptance used `C:\Users\josep\onton-fixed-acceptance` with local bare origin and run data under `C:\Users\josep\onton-fixed-acceptance-data`. Tasks 1 and 2 completed concurrently, task 3 logged `Integrated 2 prerequisite revisions`, and task 4 logged `Integrated 1 prerequisite revisions`. Final task HEADs were `8cfb623b`, `c6d70b94`, `10edd741`, and `06ebfe9a`; task 4's final worktree contained `Text_metrics`, parser tests, `test_text_metrics`, and `bin/text_metrics`. `git merge-base --is-ancestor` returned success for all prerequisite SHAs. Restart recovered all four worktrees and persisted `merged=true` plus each final `head_oid`. The local forge correctly emitted no external PR operations. The headless restart command remained alive instead of exiting after recovery, so that supervisor-exit behavior remains a documented limitation.
+
 ## Desktop experience
 
 Verified through the packaged renderer/CDP surface:
@@ -82,8 +96,8 @@ Verified through the packaged renderer/CDP surface:
 | # | Category | Problem | Status |
 |---|---|---|---|
 | 1 | Correctness bug | Studio defaulted every newly opened repository to `main`. The real clone used `studio-development`, so the first run failed before scheduling. | **Fixed** in `studio/main.cjs` by restoring persisted config or detecting the current Git branch. Rebuilt package and verified `mainBranch=studio-development`. |
-| 2 | Correctness/reliability | Dependent tasks are scheduled after prerequisites but their worktrees are based on the unchanged base branch. Task 3 could not see task 1's module or task 2's tests and blocked. | **Unresolved.** Requires OCaml dependency materialization/integration semantics; not safe to patch as an Electron workaround. |
-| 3 | Reliability | Restarting after the Onton process ended fenced the run as failed even though durable commits, transcripts, artifacts, and blocker state were recoverable. | **Unresolved.** Recovery should distinguish an already terminal persisted run from an unattachable active process. |
+| 2 | Correctness/reliability | Dependent tasks were scheduled after prerequisites but their worktrees were based on the unchanged base branch. | **Fixed in OCaml; targeted Git regression passes.** A new disposable-clone four-task packaged acceptance is still required before removing the real-project NO-GO. |
+| 3 | Reliability | Restart recovery previously fenced the run despite durable evidence. | **Improved.** Fixed acceptance recovered all worktrees, merged flags, and final SHAs; headless restart still requires an explicit supervisor-exit fix. |
 | 4 | Usability limitation | The dependency “graph” is only a textual list, with no visual DAG or direct dependency-path explanation. | **Unresolved.** Makes larger real plans difficult to reason about. |
 | 5 | Usability limitation | Existing structured format-version 2/3 plans cannot be edited in the builder, only imported/executed. | **Unresolved.** Real repositories using current structured plans require an external editor. |
 
@@ -99,8 +113,8 @@ Additional validation risk: the full Windows `dune runtest` suite did not comple
 
 ## Required follow-up before real-project beta
 
-1. Define and test how dependency commits become the base of dependent worktrees while preserving OCaml orchestration authority.
-2. Add recovery tests for restart after terminal, blocked, and process-lost runs; preserve terminal state when durable evidence is complete.
+1. Fix the remaining headless restart supervisor-exit behavior so an already-terminal local run exits cleanly after recovery.
+2. Add automated restart tests for terminal, blocked, and process-lost runs; preserve terminal state when durable evidence is complete.
 3. Decide whether a visual DAG is required for beta-scale plans.
 4. Provide an editing path for structured gameplans or clearly mark them read-only in setup.
 5. Establish a reproducible Windows full-suite test environment and remove/guard Unix-only cleanup assumptions.

@@ -91,9 +91,9 @@ val assigned_context :
 
 val complete : t -> Patch_id.t -> t
 
-val complete_local : t -> Patch_id.t -> t
+val complete_local : ?head_oid:string -> t -> Patch_id.t -> t
 (** Complete a local-profile task after its committed worktree evidence is
-    recorded; consumes the captured session completion without forge claims. *)
+    recorded; retain the committed HEAD for dependent materialization. *)
 
 val prepare_rebase_after_checkpoint_failure : t -> Patch_id.t -> t * bool
 (** Enqueue a WONTDO Rebase and return [true] when the retry marker is set, the
@@ -265,6 +265,7 @@ val agent : t -> Patch_id.t -> Patch_agent.t
 val find_agent : t -> Patch_id.t -> Patch_agent.t option
 val all_agents : t -> Patch_agent.t list
 val graph : t -> Graph.t
+val dependency_revisions : t -> Patch_id.t -> (string list, string) Result.t
 val main_branch : t -> Branch.t
 val set_main_branch : t -> Branch.t -> t
 
