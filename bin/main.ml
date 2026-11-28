@@ -1274,9 +1274,21 @@ let run_main_loop ~net (setup : runtime_setup) (cap : constructed_capabilities)
       ~is_normal_quit:(function Fibers.Tui.Quit -> true | _ -> false)
       ~log:log_fatal f ()
   in
+  let startup_terminal = ref false in
   let startup =
-    guard_fiber ~return_is_normal:true "startup-reconciler"
-      cap.reconciliation_fiber
+    guard_fiber ~return_is_normal:true "startup-reconciler" (fun () ->
+        cap.reconciliation_fiber ();
+        if headless && String.equal Forge.name "local" then
+          startup_terminal :=
+            Runtime.read setup.runtime (fun snap ->
+                Base.List.for_all setup.gameplan.Gameplan.patches ~f:(fun patch ->
+                    match
+                      Orchestrator.find_agent snap.Runtime.orchestrator
+                        patch.Patch.id
+                    with
+                    | Some agent ->
+                        (not agent.Patch_agent.busy) && agent.Patch_agent.merged
+                    | None -> false)))
   in
   let common_fibers =
     [
@@ -1300,11 +1312,13 @@ let run_main_loop ~net (setup : runtime_setup) (cap : constructed_capabilities)
     try
       Eio.Cancel.sub (fun cancel ->
         request_cancel := (fun () -> Eio.Cancel.cancel cancel (Failure "control cancellation requested"));
-        Supervisor_guard.run_after_startup ~startup
-        (guard_fiber "headless" (fun () -> Fibers.Headless.run ())
-         :: guard_fiber "runner" (fun () -> Fibers.Runner.run ())
-         :: control_fibers
-        @ common_fibers);
+        startup ();
+        if !startup_terminal then save_snapshot ()
+        else
+          Eio.Fiber.all
+            (guard_fiber "headless" (fun () -> Fibers.Headless.run ())
+             :: guard_fiber "runner" (fun () -> Fibers.Runner.run ())
+             :: control_fibers @ common_fibers)
       );
       report_fatal ()
     with Supervisor_guard.Fatal_supervisor_error _ ->

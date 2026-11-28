@@ -76,7 +76,7 @@ The source fix is implemented on `studio-development`:
 - `test/test_gameplan_parser_properties.exe`: PASS, 25 tests.
 - Rebuilt packaged acceptance: installer, all five native resources, Codex/Git detection, canonical four-task validation, packaged launch, uninstall, and repository preservation all PASS. Development-host isolation was SKIP.
 
-The fixed packaged four-task acceptance used `C:\Users\josep\onton-fixed-acceptance` with local bare origin and run data under `C:\Users\josep\onton-fixed-acceptance-data`. Tasks 1 and 2 completed concurrently, task 3 logged `Integrated 2 prerequisite revisions`, and task 4 logged `Integrated 1 prerequisite revisions`. Final task HEADs were `8cfb623b`, `c6d70b94`, `10edd741`, and `06ebfe9a`; task 4's final worktree contained `Text_metrics`, parser tests, `test_text_metrics`, and `bin/text_metrics`. `git merge-base --is-ancestor` returned success for all prerequisite SHAs. Restart recovered all four worktrees and persisted `merged=true` plus each final `head_oid`. The local forge correctly emitted no external PR operations. The headless restart command remained alive instead of exiting after recovery, so that supervisor-exit behavior remains a documented limitation.
+The fixed packaged four-task acceptance used `C:\Users\josep\onton-fixed-acceptance` with local bare origin and run data under `C:\Users\josep\onton-fixed-acceptance-data`. Tasks 1 and 2 completed concurrently, task 3 logged `Integrated 2 prerequisite revisions`, and task 4 logged `Integrated 1 prerequisite revisions`. Final task HEADs were `8cfb623b`, `c6d70b94`, `10edd741`, and `06ebfe9a`; task 4's final worktree contained `Text_metrics`, parser tests, `test_text_metrics`, and `bin/text_metrics`. `git merge-base --is-ancestor` returned success for all prerequisite SHAs. Restart recovered all four worktrees and persisted `merged=true` plus each final `head_oid`. The local forge correctly emitted no external PR operations. The final packaged binary was restarted against the completed persisted run and exited with code 0 after recovering all worktrees and revisions.
 
 ## Desktop experience
 
@@ -113,8 +113,8 @@ Additional validation risk: the full Windows `dune runtest` suite did not comple
 
 ## Required follow-up before real-project beta
 
-1. Fix the remaining headless restart supervisor-exit behavior so an already-terminal local run exits cleanly after recovery.
-2. Add automated restart tests for terminal, blocked, and process-lost runs; preserve terminal state when durable evidence is complete.
+1. Add automated restart tests for terminal, blocked, and process-lost runs; preserve terminal state when durable evidence is complete.
+2. Run the packaged acceptance on an isolated clean Windows VM before public beta.
 3. Decide whether a visual DAG is required for beta-scale plans.
 4. Provide an editing path for structured gameplans or clearly mark them read-only in setup.
 5. Establish a reproducible Windows full-suite test environment and remove/guard Unix-only cleanup assumptions.

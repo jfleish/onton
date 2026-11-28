@@ -5,7 +5,7 @@ Branch: `studio-development`
 
 ## Assessment
 
-**INTERNAL BETA GO / REAL-PROJECT GO / PUBLIC BETA NO-GO.** The fixed packaged engine completed the real four-task local-forge acceptance with verified prerequisite content and ancestry. Public beta remains blocked by clean-machine validation, signing, and the remaining headless restart-exit behavior. See `docs/studio-internal-beta-report.md`.
+**INTERNAL BETA GO / REAL-PROJECT GO / PUBLIC BETA NO-GO.** The fixed packaged engine completed the real four-task local-forge acceptance with verified prerequisite content, ancestry, and successful terminal restart exit. Public beta remains blocked by clean-machine validation and signing. See `docs/studio-internal-beta-report.md`.
 
 ## Packaged acceptance
 
@@ -25,7 +25,7 @@ Branch: `studio-development`
 | Internal beta dependent run (baseline) | FAIL | Historical failure retained in `docs/studio-internal-beta-report.md` |
 | Dependency integration regression | PASS | `test_worktree_backend_integration.exe`; fan-in content/ancestry and conflict-abort checks |
 | Fixed packaged four-task validation | PASS | Disposable clone completed all four tasks; integrated content, exact SHAs, worktree HEADs, ancestry, timestamps, and local-only forge verified |
-| Restart state recovery | PASS with limitation | All four worktrees and merged/head SHA state recovered; headless process did not exit automatically after terminal recovery |
+| Restart state recovery | PASS | All four worktrees and merged/head SHA state recovered; fixed packaged headless process exited 0 automatically |
 | Uninstall repository safety | PASS | disposable repository SHA-256 inventory unchanged |
 | Automated acceptance script | PASS (development host only) | `scripts/accept-studio-windows.ps1`; installer/native/dependency/validation/uninstall/repository checks passed |
 | Clean-machine VM | SKIP | no disposable Windows VM or isolated runner available; do not treat development-host PASS as VM acceptance |
