@@ -7,6 +7,8 @@ _opam/
 .vercel
 node_modules/
 studio/dist/
+packaging/native/
+dist-electron/
 .env
 *.pem
 private.pem

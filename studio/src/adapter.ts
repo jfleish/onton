@@ -38,6 +38,7 @@ export type RunStatus = "idle" | "running" | "completed" | "failed" | "cancelled
 export interface StudioGameplan { name: string; path: string; selected: boolean; }
 export interface StudioRecentProject { root: string; lastUsed: string; }
 export interface StudioConfig { backend: "codex"; forge: "local"; mainBranch: string; maxConcurrency: number; }
+export interface StudioDependencies { git: boolean; codex: boolean; }
 export interface StudioSnapshot {
   version: typeof STUDIO_ADAPTER_VERSION;
   mode: AdapterMode;
@@ -47,6 +48,7 @@ export interface StudioSnapshot {
   gameplans: StudioGameplan[];
   recents: StudioRecentProject[];
   config: StudioConfig;
+  dependencies: StudioDependencies;
   error: string | null;
   tasks: StudioTask[];
   agents: StudioAgent[];

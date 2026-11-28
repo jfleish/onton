@@ -1,9 +1,18 @@
 {
+  "name": "onton-studio",
+  "version": "0.1.0",
   "private": true,
+  "description": "Onton Studio desktop frontend for the native OCaml orchestrator",
+  "main": "studio/main.cjs",
+  "author": "Onton",
+  "license": "MIT",
   "scripts": {
     "studio:build": "tsc -p studio/tsconfig.json",
     "studio:start": "npm run studio:build && electron studio/main.cjs",
-    "studio:check": "tsc -p studio/tsconfig.json --noEmit"
+    "studio:check": "tsc -p studio/tsconfig.json --noEmit",
+    "studio:stage-native": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/stage-native.ps1",
+    "studio:package": "npm run studio:build && npm run studio:stage-native && electron-builder --win nsis portable --x64",
+    "studio:package:dir": "npm run studio:build && npm run studio:stage-native && electron-builder --win --dir --x64"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1028.0",
@@ -12,6 +21,50 @@
   "devDependencies": {
     "@types/node": "^25.6.0",
     "electron": "^45.5.0",
+    "electron-builder": "^26.0.12",
     "typescript": "^7.0.2"
+  },
+  "build": {
+    "appId": "com.onton.studio",
+    "productName": "Onton Studio",
+    "executableName": "Onton Studio",
+    "asar": true,
+    "directories": {
+      "output": "dist-electron",
+      "buildResources": "."
+    },
+    "files": [
+      "studio/main.cjs",
+      "studio/preload.cjs",
+      "studio/index.html",
+      "studio/styles.css",
+      "studio/dist/**",
+      "!studio/src/**"
+    ],
+    "extraResources": [
+      {
+        "from": "packaging/native/win32-x64",
+        "to": "native/win32-x64",
+        "filter": ["**/*"]
+      }
+    ],
+    "win": {
+      "target": ["nsis", "portable"],
+      "icon": "onton.png",
+      "signAndEditExecutable": false,
+      "artifactName": "Onton-Studio-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Onton Studio",
+      "deleteAppDataOnUninstall": false
+    },
+    "portable": {
+      "artifactName": "Onton-Studio-${version}-${arch}-portable.${ext}"
+    }
   }
 }
