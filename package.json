@@ -18,10 +18,14 @@
     "@aws-sdk/client-s3": "^3.1028.0",
     "@aws-sdk/s3-request-presigner": "^3.1028.0"
   },
+  "overrides": {
+    "fast-xml-parser": "5.12.1",
+    "minimatch": "11.0.9"
+  },
   "devDependencies": {
     "@types/node": "^25.6.0",
     "electron": "^45.5.0",
-    "electron-builder": "^26.0.12",
+    "electron-builder": "^26.18.0",
     "typescript": "^7.0.2"
   },
   "build": {
@@ -45,11 +49,16 @@
       {
         "from": "packaging/native/win32-x64",
         "to": "native/win32-x64",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ],
     "win": {
-      "target": ["nsis", "portable"],
+      "target": [
+        "nsis",
+        "portable"
+      ],
       "icon": "onton.png",
       "signAndEditExecutable": false,
       "artifactName": "Onton-Studio-${version}-${arch}.${ext}"

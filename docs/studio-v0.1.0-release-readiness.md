@@ -5,7 +5,7 @@ Branch: `studio-development`
 
 ## Assessment
 
-**PASS with beta gates.** The installed NSIS build and portable build load the packaged Electron frontend and bundled native OCaml engine. Portable real Codex execution completed the three-task acceptance. No public release was published.
+**INTERNAL BETA GO / PUBLIC BETA NO-GO.** The installed NSIS build and portable build load the packaged Electron frontend and bundled native OCaml engine. Portable real Codex execution completed the three-task acceptance. No public release was published. Internal distribution is acceptable after the documented dependency and SmartScreen warnings; public beta remains blocked on isolated clean-machine acceptance and authorized code signing.
 
 ## Packaged acceptance
 
@@ -23,9 +23,10 @@ Branch: `studio-development`
 | Authenticated cancellation | PASS | Onton process tree exited; run persisted as cancelled |
 | Restart recovery | PASS | cancelled run history reopened after portable restart |
 | Uninstall repository safety | PASS | disposable repository SHA-256 inventory unchanged |
-| Clean-machine VM | NOT RUN | no disposable Windows VM available |
+| Automated acceptance script | PASS (development host only) | `scripts/accept-studio-windows.ps1`; installer/native/dependency/validation/uninstall/repository checks passed |
+| Clean-machine VM | SKIP | no disposable Windows VM or isolated runner available; do not treat development-host PASS as VM acceptance |
 
-Portable real-run evidence is under `phase6c-results/portable-final-acceptance/`. The control endpoint observed during the run was loopback TCP with a 256-bit token. No external forge operations were enabled; the profile was local-only.
+Portable real-run evidence is under `phase6c-results/portable-final-acceptance/`. The control endpoint observed during the run was loopback TCP with a 256-bit token. No external forge operations were enabled; the profile was local-only. The automated acceptance output is under `phase6c-results/clean-acceptance-final/`; it passed on this development host only and explicitly recorded `clean-machine-isolation: SKIP`.
 
 ## Security/reliability audit
 
@@ -48,8 +49,8 @@ The OCaml engine remains authoritative for scheduling, dependency gates, worktre
 Installer:
 
 ```text
-B4BB10D0A849F2FB54766DFC50D869D85C7FE4C531FD0ED1FD096407AB07A4C0  Onton-Studio-0.1.0-x64.exe
-3272E4BE088E2776304F85E888849ADFCB428D904F5F1D1BF6817A5A6A283736  Onton-Studio-0.1.0-x64-portable.exe
+9D25A7244859582BE5F2888568A3DFEAB1AD0B032463FF79D297191E8A23F2F3  Onton-Studio-0.1.0-x64.exe
+863037A2BEE7145F867BFF69DFB272C5BD5D36440CD7A840D62F199CC83492CD  Onton-Studio-0.1.0-x64-portable.exe
 ```
 
 Native payload:
@@ -62,9 +63,17 @@ C5EDF68200440B62D1F255903B3DC9BFC004028EF5216703EE7F9235CD4A7432  onton-setsid-e
 37248CDA33845E7C5C35A574E57DA762DD0A8268F0270D179F30A33746809681  libgmp-10.dll
 ```
 
+## Dependency audit
+
+`npm audit` initially reported 18 findings, including high-severity build-tool transitive issues in the older electron-builder tree. Upgrading electron-builder to `26.18.1` and pinning safe transitive versions with npm overrides (`minimatch 11.0.9`, `fast-xml-parser 5.12.1`) reduced the final audit to **0 vulnerabilities**. `npm run studio:check`, `npm run studio:build`, and `npm run studio:package` passed with the upgraded tree.
+
+The audit covers development/package tooling as well as runtime dependencies. Re-run `npm audit` before each beta artifact rebuild because the upstream advisory database and transitive ranges change independently of the application source.
+
 ## CI and beta gates
 
-The Windows release workflow now runs Studio TypeScript checks, packages installer/portable outputs, checks the bundled engine and DLL, generates SHA-256 checksums, and uploads the packages as CI artifacts. It does not create or publish a GitHub release.
+The Windows release workflow now runs Studio TypeScript checks, packages installer/portable outputs, checks the bundled engine and DLL, generates SHA-256 checksums, and uploads the packages as CI artifacts. The automatic GitHub Release and Homebrew push jobs were removed; CI does not create, publish, or push a release artifact. Artifact upload uses the workflow token only for Actions artifact storage.
+
+The acceptance script is `scripts/accept-studio-windows.ps1`. It installs the NSIS package into a temporary isolated path, checks every native resource, launches through CDP without setting a developer engine path, validates a canonical plan, checks dependency status, uninstalls, and compares a SHA-256 repository inventory. It is suitable for a clean Windows runner; this machine is not an isolated VM.
 
 Before public beta:
 
@@ -72,4 +81,5 @@ Before public beta:
 2. Verify Git for Windows and Codex installation/authentication guidance on that VM.
 3. Obtain code-signing credentials and sign the installer/native payload, or explicitly accept SmartScreen warnings for an internal beta.
 4. Review Electron-builder/npm dependency advisories before distribution.
-5. Keep generated installers outside Git and publish only after explicit authorization.
+5. Obtain an Authenticode code-signing certificate for the publisher identity, protect the private key in CI secret storage, configure electron-builder signing with authorized credentials, and verify the signed installer/native payload and timestamp. No certificate was purchased or used here.
+6. Keep generated installers outside Git and publish only after explicit authorization.
